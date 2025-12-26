@@ -499,6 +499,19 @@ class NukeCopyTab(ttk.Frame):
             row=0, column=4, sticky="w", **pad
         )
 
+        box_reads = ttk.LabelFrame(frm, text="Read Paths (from .nk)")
+        box_reads.pack(fill="both", expand=True, **pad)
+
+        reads_frame = ttk.Frame(box_reads)
+        reads_frame.pack(fill="both", expand=True, padx=8, pady=8)
+
+        self.reads_list = tk.Listbox(reads_frame, height=12)
+        reads_scroll = ttk.Scrollbar(reads_frame, orient="vertical", command=self.reads_list.yview)
+        self.reads_list.configure(yscrollcommand=reads_scroll.set)
+
+        self.reads_list.pack(side="left", fill="both", expand=True)
+        reads_scroll.pack(side="right", fill="y")
+
         box_bottom = ttk.Frame(frm)
         box_bottom.pack(fill="x", **pad)
 
@@ -574,6 +587,7 @@ class NukeCopyTab(ttk.Frame):
 
         self.prog["value"] = 0
         self.var_status.set("Parsing...")
+        self.reads_list.delete(0, "end")
 
         def worker():
             try:
@@ -600,6 +614,13 @@ class NukeCopyTab(ttk.Frame):
                 nk.log(f"展開後來源檔案數量：{len(all_sources)}")
                 nk.log(f"去重後實際要處理：{total}")
                 nk.log(f"Log 檔案位置：{os.path.abspath(nk.LOG_FILE)}")
+
+                def update_read_list():
+                    self.reads_list.delete(0, "end")
+                    for src in unique_sources:
+                        self.reads_list.insert("end", src)
+
+                self.after(0, update_read_list)
 
                 success = []
                 missing = []
