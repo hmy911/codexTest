@@ -469,6 +469,7 @@ class NukeCopyTab(ttk.Frame):
         self.var_status = tk.StringVar(value="Idle")
         self._log_path = None
         self._worker = None
+        self._read_entries = []
         self._build_ui()
 
     def _format_sequence_display(self, path: str, first: Optional[int], last: Optional[int]) -> str:
@@ -538,6 +539,16 @@ class NukeCopyTab(ttk.Frame):
 
         self.reads_list.pack(side="left", fill="both", expand=True)
         reads_scroll.pack(side="right", fill="y")
+        self.reads_list.bind("<Double-1>", self._open_selected_read_folder)
+
+        reads_btns = ttk.Frame(box_reads)
+        reads_btns.pack(fill="x", padx=8, pady=(0, 8))
+        ttk.Button(reads_btns, text="Copy Path", command=self._copy_selected_read_path).pack(
+            side="left", padx=4
+        )
+        ttk.Button(reads_btns, text="Open Folder", command=self._open_selected_read_folder).pack(
+            side="left", padx=4
+        )
 
         box_bottom = ttk.Frame(frm)
         box_bottom.pack(fill="x", **pad)
@@ -564,6 +575,26 @@ class NukeCopyTab(ttk.Frame):
             return
         if not open_in_explorer(str(self._log_path)):
             messagebox.showwarning("Open Log", f"Log not found:\n{self._log_path}")
+
+    def _copy_selected_read_path(self):
+        sel = self.reads_list.curselection()
+        if not sel:
+            messagebox.showwarning("Copy Path", "No read path selected.")
+            return
+        raw_path = self._read_entries[sel[0]]["raw"]
+        self.clipboard_clear()
+        self.clipboard_append(raw_path)
+        self.var_status.set("Path copied to clipboard.")
+
+    def _open_selected_read_folder(self, event=None):
+        sel = self.reads_list.curselection()
+        if not sel:
+            messagebox.showwarning("Open Folder", "No read path selected.")
+            return
+        raw_path = self._read_entries[sel[0]]["raw"]
+        folder = os.path.dirname(raw_path)
+        if not open_in_explorer(folder):
+            messagebox.showwarning("Open Folder", f"Folder not found:\n{folder}")
 
     def _validate(self):
         nk_path = self.var_nk_path.get().strip()
@@ -615,6 +646,7 @@ class NukeCopyTab(ttk.Frame):
         self.prog["value"] = 0
         self.var_status.set("Parsing...")
         self.reads_list.delete(0, "end")
+        self._read_entries = []
 
         def worker():
             try:
@@ -628,11 +660,12 @@ class NukeCopyTab(ttk.Frame):
                 reads = nk.parse_nk_for_reads(nk_path)
                 nk.log(f"找到 Read/DeepRead 節點數量：{len(reads)}")
 
-                read_display = []
+                read_entries = []
                 for r in reads:
-                    display_path = self._format_sequence_display(r.file or "", r.first, r.last)
-                    if display_path:
-                        read_display.append(display_path)
+                    raw_path = (r.file or "").strip()
+                    display_path = self._format_sequence_display(raw_path, r.first, r.last)
+                    if display_path and raw_path:
+                        read_entries.append({"display": display_path, "raw": raw_path})
 
                 all_sources = []
                 for r in reads:
@@ -643,7 +676,10 @@ class NukeCopyTab(ttk.Frame):
                     return
 
                 unique_sources = sorted(set(all_sources))
-                unique_display = sorted(set(read_display))
+                unique_entries = {}
+                for entry in read_entries:
+                    unique_entries.setdefault(entry["display"], entry)
+                sorted_entries = [unique_entries[key] for key in sorted(unique_entries)]
                 total = len(unique_sources)
                 nk.log(f"展開後來源檔案數量：{len(all_sources)}")
                 nk.log(f"去重後實際要處理：{total}")
@@ -651,8 +687,9 @@ class NukeCopyTab(ttk.Frame):
 
                 def update_read_list():
                     self.reads_list.delete(0, "end")
-                    for display in unique_display:
-                        self.reads_list.insert("end", display)
+                    self._read_entries = sorted_entries
+                    for entry in sorted_entries:
+                        self.reads_list.insert("end", entry["display"])
 
                 self.after(0, update_read_list)
 
