@@ -15,12 +15,15 @@ import os
 import re
 import sys
 import time
+import datetime
 import shutil
 import threading
 import subprocess
 from pathlib import Path
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import nuke_copy_reads_nk_parser as nk
 
 CXX_RE = re.compile(r"^C\d{2}$", re.IGNORECASE)
 
@@ -61,12 +64,9 @@ def get_base_dir() -> Path:
     # base folder: .py -> script folder; .exe -> exe folder
     return Path(sys.executable).parent if getattr(sys, "frozen", False) else Path(__file__).parent
 
-class App(tk.Tk):
-    def __init__(self):
-        super().__init__()
-        self.title("Backup unsorted_AE -> Shots\\Cxx\\Subpath")
-        self.geometry("1020x740")
-
+class ShotCopyTab(ttk.Frame):
+    def __init__(self, master):
+        super().__init__(master)
         # Defaults based on your example
         self.var_source = tk.StringVar(value=r"Y:\202211_G_Billions\Shots\EP18\Design\AI_Gen\work\unsorted_AE")
         self.var_dest_root = tk.StringVar(value=r"Y:\202211_G_Billions\Shots\EP18\Shots")
@@ -458,8 +458,248 @@ class App(tk.Tk):
         self.lbl.config(text=f"Done. OK={ok} SKIP={skipped} FAIL={failed}")
         messagebox.showinfo("Finished", f"Done.\nOK={ok} SKIP={skipped} FAIL={failed}\nLog:\n{log_path}")
 
+class NukeCopyTab(ttk.Frame):
+    def __init__(self, master):
+        super().__init__(master)
+        self.var_nk_path = tk.StringVar(value=r"")
+        self.var_target_drive = tk.StringVar(value=nk.TARGET_DRIVE)
+        self.var_dryrun = tk.BooleanVar(value=nk.DRY_RUN)
+        self.var_max_workers = tk.IntVar(value=nk.MAX_WORKERS)
+        self.var_status = tk.StringVar(value="Idle")
+        self._log_path = None
+        self._worker = None
+        self._build_ui()
+
+    def _build_ui(self):
+        pad = {"padx": 10, "pady": 6}
+        frm = ttk.Frame(self)
+        frm.pack(fill="both", expand=True)
+
+        box_paths = ttk.LabelFrame(frm, text="NK Script")
+        box_paths.pack(fill="x", **pad)
+
+        ttk.Label(box_paths, text="NK File:").grid(row=0, column=0, sticky="w", **pad)
+        ttk.Entry(box_paths, textvariable=self.var_nk_path, width=92).grid(row=0, column=1, sticky="we", **pad)
+        ttk.Button(box_paths, text="Browse...", command=self._browse_nk).grid(row=0, column=2, **pad)
+
+        box_paths.columnconfigure(1, weight=1)
+
+        box_opts = ttk.LabelFrame(frm, text="Options")
+        box_opts.pack(fill="x", **pad)
+
+        ttk.Label(box_opts, text="Target Drive:").grid(row=0, column=0, sticky="w", **pad)
+        ttk.Entry(box_opts, textvariable=self.var_target_drive, width=12).grid(row=0, column=1, sticky="w", **pad)
+
+        ttk.Label(box_opts, text="Max Workers:").grid(row=0, column=2, sticky="w", **pad)
+        ttk.Spinbox(box_opts, from_=1, to=32, textvariable=self.var_max_workers, width=6).grid(
+            row=0, column=3, sticky="w", **pad
+        )
+
+        ttk.Checkbutton(box_opts, text="Dry-run (no actual copy)", variable=self.var_dryrun).grid(
+            row=0, column=4, sticky="w", **pad
+        )
+
+        box_reads = ttk.LabelFrame(frm, text="Read Paths (from .nk)")
+        box_reads.pack(fill="both", expand=True, **pad)
+
+        reads_frame = ttk.Frame(box_reads)
+        reads_frame.pack(fill="both", expand=True, padx=8, pady=8)
+
+        self.reads_list = tk.Listbox(reads_frame, height=12)
+        reads_scroll = ttk.Scrollbar(reads_frame, orient="vertical", command=self.reads_list.yview)
+        self.reads_list.configure(yscrollcommand=reads_scroll.set)
+
+        self.reads_list.pack(side="left", fill="both", expand=True)
+        reads_scroll.pack(side="right", fill="y")
+
+        box_bottom = ttk.Frame(frm)
+        box_bottom.pack(fill="x", **pad)
+
+        ttk.Button(box_bottom, text="Run Copy", command=self._run_copy).pack(side="left", padx=6)
+        ttk.Button(box_bottom, text="Open Log", command=self._open_log).pack(side="left", padx=6)
+
+        self.prog = ttk.Progressbar(box_bottom, mode="determinate")
+        self.prog.pack(side="left", fill="x", expand=True, padx=10)
+
+        ttk.Label(box_bottom, textvariable=self.var_status).pack(side="left", padx=6)
+
+    def _browse_nk(self):
+        p = filedialog.askopenfilename(
+            title="Select Nuke Script (.nk)",
+            filetypes=[("Nuke Script", "*.nk"), ("All Files", "*.*")]
+        )
+        if p:
+            self.var_nk_path.set(p)
+
+    def _open_log(self):
+        if not self._log_path:
+            messagebox.showwarning("Open Log", "No log file yet.")
+            return
+        if not open_in_explorer(str(self._log_path)):
+            messagebox.showwarning("Open Log", f"Log not found:\n{self._log_path}")
+
+    def _validate(self):
+        nk_path = self.var_nk_path.get().strip()
+        if not nk_path:
+            messagebox.showwarning("Invalid settings", "Please select a .nk file.")
+            return None
+        if not os.path.exists(nk_path):
+            messagebox.showwarning("Invalid settings", f"NK file not found:\n{nk_path}")
+            return None
+
+        target_drive = self.var_target_drive.get().strip()
+        if not target_drive:
+            messagebox.showwarning("Invalid settings", "Target Drive is empty.")
+            return None
+        if re.match(r"^[A-Za-z]:$", target_drive):
+            target_drive = f"{target_drive}/"
+
+        try:
+            max_workers = int(self.var_max_workers.get())
+        except ValueError:
+            messagebox.showwarning("Invalid settings", "Max Workers must be a number.")
+            return None
+        if max_workers < 1:
+            messagebox.showwarning("Invalid settings", "Max Workers must be >= 1.")
+            return None
+
+        return nk_path, target_drive, max_workers, self.var_dryrun.get()
+
+    def _run_copy(self):
+        if self._worker and self._worker.is_alive():
+            messagebox.showwarning("Running", "Copy is already running.")
+            return
+
+        settings = self._validate()
+        if not settings:
+            return
+        nk_path, target_drive, max_workers, dryrun = settings
+
+        nk.DRY_RUN = dryrun
+        nk.TARGET_DRIVE = target_drive
+        nk.MAX_WORKERS = max_workers
+
+        base_dir = get_base_dir()
+        log_dir = base_dir / "log"
+        log_dir.mkdir(parents=True, exist_ok=True)
+        self._log_path = log_dir / f"copy_reads_{now_stamp()}.log"
+        nk.LOG_FILE = str(self._log_path)
+
+        self.prog["value"] = 0
+        self.var_status.set("Parsing...")
+        self.reads_list.delete(0, "end")
+
+        def worker():
+            try:
+                with open(nk.LOG_FILE, "w", encoding="utf-8") as f:
+                    f.write("=== nuke copy reads log ===\n")
+                    f.write(f"Started at {datetime.datetime.now().isoformat()}\n")
+                    f.write(f"NK: {nk_path}\n")
+                    f.write(f"DRY_RUN={nk.DRY_RUN}, TARGET_DRIVE={nk.TARGET_DRIVE}, MAX_WORKERS={nk.MAX_WORKERS}\n\n")
+
+                nk.log(f"開始解析 .nk：{nk_path}")
+                reads = nk.parse_nk_for_reads(nk_path)
+                nk.log(f"找到 Read/DeepRead 節點數量：{len(reads)}")
+
+                all_sources = []
+                for r in reads:
+                    all_sources.extend(nk.expand_read_to_files(r))
+
+                if not all_sources:
+                    self.after(0, lambda: self._finish_copy(0, 0, 0, 0, "No source files found."))
+                    return
+
+                unique_sources = sorted(set(all_sources))
+                total = len(unique_sources)
+                nk.log(f"展開後來源檔案數量：{len(all_sources)}")
+                nk.log(f"去重後實際要處理：{total}")
+                nk.log(f"Log 檔案位置：{os.path.abspath(nk.LOG_FILE)}")
+
+                def update_read_list():
+                    self.reads_list.delete(0, "end")
+                    for src in unique_sources:
+                        self.reads_list.insert("end", src)
+
+                self.after(0, update_read_list)
+
+                success = []
+                missing = []
+                errors = []
+                dryrun_list = []
+                done_count = 0
+
+                def update_progress():
+                    self.prog["value"] = done_count
+                    self.prog["maximum"] = total
+                    self.var_status.set(f"Copying {done_count}/{total}")
+
+                self.after(0, update_progress)
+
+                nk.log("開始平行複製檔案...")
+                with ThreadPoolExecutor(max_workers=nk.MAX_WORKERS) as executor:
+                    future_to_src = {executor.submit(nk.copy_worker, src): src for src in unique_sources}
+
+                    for fut in as_completed(future_to_src):
+                        status, src, dst, err = fut.result()
+                        done_count += 1
+                        self.after(0, update_progress)
+
+                        if status == "ok":
+                            success.append(src)
+                            nk.log(f"成功複製：{src}  ->  {dst}")
+                        elif status == "dry_run":
+                            dryrun_list.append(src)
+                            nk.log(f"[DRY_RUN] 模擬複製：{src}  ->  {dst}")
+                        elif status == "missing":
+                            missing.append(src)
+                            nk.log(f"❌ 找不到來源檔案：{src}")
+                        elif status == "error":
+                            errors.append(src)
+                            nk.log(f"❌ 複製失敗：{src}  ->  {dst}  原因：{err}")
+
+                nk.log("========================================")
+                nk.log("複製流程結束，統計如下：")
+                nk.log(f"  成功複製：{len(success)}")
+                nk.log(f"  模擬複製 (DRY_RUN)：{len(dryrun_list)}")
+                nk.log(f"  缺少來源檔案：{len(missing)}")
+                nk.log(f"  複製失敗：{len(errors)}")
+                nk.log("========================================")
+
+                self.after(0, lambda: self._finish_copy(
+                    len(success), len(dryrun_list), len(missing), len(errors), "Done."
+                ))
+            except Exception as e:
+                self.after(0, lambda: self._finish_copy(0, 0, 0, 0, f"Error: {e}"))
+
+        self._worker = threading.Thread(target=worker, daemon=True)
+        self._worker.start()
+
+    def _finish_copy(self, success, dryrun, missing, errors, msg):
+        self.var_status.set(msg)
+        messagebox.showinfo(
+            "Finished",
+            f"{msg}\nSuccess: {success}\nDry-run: {dryrun}\nMissing: {missing}\nErrors: {errors}\nLog:\n{self._log_path}"
+        )
+
+
+class MainApp(tk.Tk):
+    def __init__(self):
+        super().__init__()
+        self.title("Backup Tools - Tabs")
+        self.geometry("1120x780")
+
+        notebook = ttk.Notebook(self)
+        notebook.pack(fill="both", expand=True)
+
+        tab_shots = ShotCopyTab(notebook)
+        tab_nuke = NukeCopyTab(notebook)
+
+        notebook.add(tab_shots, text="TAB_A: vy_oneCopyShots")
+        notebook.add(tab_nuke, text="TAB_B: Nuke copy reads")
+
+
 if __name__ == "__main__":
-    App().mainloop()
+    MainApp().mainloop()
 
 
 '''
