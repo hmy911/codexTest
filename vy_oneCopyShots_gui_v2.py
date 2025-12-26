@@ -23,6 +23,7 @@ from pathlib import Path
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from typing import Optional
 import nuke_copy_reads_nk_parser as nk
 
 CXX_RE = re.compile(r"^C\d{2}$", re.IGNORECASE)
@@ -470,6 +471,32 @@ class NukeCopyTab(ttk.Frame):
         self._worker = None
         self._build_ui()
 
+    def _format_sequence_display(self, path: str, first: Optional[int], last: Optional[int]) -> str:
+        if not path:
+            return ""
+        display_path = path
+
+        if "#" in display_path and "%" not in display_path:
+            match = re.search(r"(#+)", display_path)
+            if match:
+                hashes = match.group(1)
+                pad = len(hashes)
+                display_path = display_path.replace(hashes, f"%0{pad}d")
+
+        if "%" in display_path and first is not None and last is not None:
+            try:
+                start = display_path % first
+                end = display_path % last
+                start_dir, start_name = os.path.split(start)
+                _, end_name = os.path.split(end)
+                start_root, start_ext = os.path.splitext(start_name)
+                end_root, _ = os.path.splitext(end_name)
+                return os.path.join(start_dir, f"{start_root}-{end_root}{start_ext}")
+            except TypeError:
+                return display_path
+
+        return display_path
+
     def _build_ui(self):
         pad = {"padx": 10, "pady": 6}
         frm = ttk.Frame(self)
@@ -601,6 +628,12 @@ class NukeCopyTab(ttk.Frame):
                 reads = nk.parse_nk_for_reads(nk_path)
                 nk.log(f"找到 Read/DeepRead 節點數量：{len(reads)}")
 
+                read_display = []
+                for r in reads:
+                    display_path = self._format_sequence_display(r.file or "", r.first, r.last)
+                    if display_path:
+                        read_display.append(display_path)
+
                 all_sources = []
                 for r in reads:
                     all_sources.extend(nk.expand_read_to_files(r))
@@ -610,6 +643,7 @@ class NukeCopyTab(ttk.Frame):
                     return
 
                 unique_sources = sorted(set(all_sources))
+                unique_display = sorted(set(read_display))
                 total = len(unique_sources)
                 nk.log(f"展開後來源檔案數量：{len(all_sources)}")
                 nk.log(f"去重後實際要處理：{total}")
@@ -617,8 +651,8 @@ class NukeCopyTab(ttk.Frame):
 
                 def update_read_list():
                     self.reads_list.delete(0, "end")
-                    for src in unique_sources:
-                        self.reads_list.insert("end", src)
+                    for display in unique_display:
+                        self.reads_list.insert("end", display)
 
                 self.after(0, update_read_list)
 
