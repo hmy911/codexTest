@@ -1,0 +1,13 @@
+{
+  "mayapy_path": "C:\\Program Files\\Autodesk\\Maya2025\\bin\\mayapy.exe",
+  "project_root": "D:\\codex",
+  "source_scripts_root": "D:\\codex\\MSX:\\projects\\2508_MASHLE\\assets\\environment\\Arena\\work\\scenes\\turtle\\Arena_Light_seX:\\projects\\2508_MASHLE\\assets\\environment\\Arena\\work\\scenes\\turtle\\Arena_X:\\projects\\2508_MASHLE\\assets\\environment\\Arena\\worX:\\projects\\2508_MASHLE\\assets\\environment\\Arena\\work\\scenes\\turtle\\Arena_Light_setC_v001.mbX:\\projects\\2508_MASHLE\\assets\\environment\\Arena\\work\\scenes\\turtle\\Arena_Light_setC_v001.mbX:\\projects\\2508_MASHLE\\assets\\environment\\Arena\\work\\scenes\\turtle\\Arena_Light_setC_v001.mbk\\scenes\\turtle\\Arena_Light_setC_v001.mbLight_setC_v001.mbtC_v001.mL_batch_Arena",
+  "step1_path": "D:\\codex\\MSL_batch_Arena\\step1_export_shot.py",
+  "step2_path": "D:\\codex\\MSL_batch_Arena\\step2_build_arena.py",
+  "step3_path": "D:\\codex\\MSL_batch_Arena\\step3_submit_deadline.py",
+  "arena_scene": "",
+  "version_note": "",
+  "extra_step1_args": "",
+  "extra_step2_args": "",
+  "extra_step3_args": ""
+}

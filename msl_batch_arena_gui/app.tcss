@@ -1,0 +1,113 @@
+Screen {
+    background: #0d1117;
+    color: #f3efe6;
+}
+
+#root {
+    height: 1fr;
+}
+
+#left {
+    width: 2fr;
+    padding: 1 2;
+}
+
+#right {
+    width: 3fr;
+    padding: 1 2 1 0;
+}
+
+#hero {
+    text-style: bold;
+    color: #ffd166;
+    margin-bottom: 1;
+}
+
+.subtitle {
+    color: #9fb3c8;
+    margin-bottom: 1;
+}
+
+.panel {
+    border: round #28445f;
+    background: #111a24;
+    padding: 1 2;
+    margin-bottom: 1;
+    height: auto;
+}
+
+.panel_title {
+    text-style: bold;
+    color: #8ecae6;
+    margin-bottom: 1;
+}
+
+.field_label {
+    color: #d6c7a3;
+    margin-top: 1;
+}
+
+Input {
+    margin-bottom: 1;
+}
+
+TextArea {
+    height: 12;
+    margin-bottom: 1;
+}
+
+#shot_preview {
+    min-height: 8;
+}
+
+.check_row {
+    height: auto;
+    margin-bottom: 1;
+}
+
+.button_row {
+    height: auto;
+    margin-bottom: 1;
+}
+
+Button {
+    margin-right: 1;
+}
+
+#status {
+    color: #b7f0ad;
+}
+
+#config_panel,
+#shot_panel,
+#actions_panel {
+    height: auto;
+}
+
+#log_panel {
+    height: 1fr;
+}
+
+#log {
+    height: 1fr;
+    background: #0a0f14;
+}
+
+#dialog {
+    width: 70;
+    height: auto;
+    padding: 1 2;
+    border: round #6ea8c6;
+    background: #16202a;
+    align: center middle;
+}
+
+.dialog_title {
+    text-style: bold;
+    color: #ffd166;
+    margin-bottom: 1;
+}
+
+.dialog_body {
+    margin-bottom: 1;
+}

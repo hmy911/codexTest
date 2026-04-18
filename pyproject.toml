@@ -1,0 +1,15 @@
+[project]
+name = "MSL_batch_Arena_GUI"
+version = "0.1.0"
+description = "Tkinter GUI wrapper for the MSL batch Arena step1/step2/step3 pipeline"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = []
+
+[project.optional-dependencies]
+build = [
+  "pyinstaller>=6.0",
+]
+
+[project.scripts]
+msl-batch-arena-gui = "msl_batch_arena_gui_tk:main"
