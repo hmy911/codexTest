@@ -1,0 +1,51 @@
+#reuse # X:\projects\2508_MASHLE\assets\environment\Arena\work\scenes\vincentyang\batch_Arena\Arena_Light_setC_v001.ma
+rem # 0415 功能ok 唯一輸出路徑會多一層filename 先手動改
+#0416 修改抓maya file,輸出v02_auto
+
+rem example step1,2,3
+"C:\Program Files\Autodesk\Maya2025\bin\mayapy.exe" "W:\vy\efx\MSL_batch_Arena\step1_export_shot.py" --shotcodes 101_0320_0020
+"C:\Program Files\Autodesk\Maya2025\bin\mayapy.exe" "W:\vy\efx\MSL_batch_Arena\step2_build_arena.py" --shotcodes 101_0320_0020
+"C:\Program Files\Autodesk\Maya2025\bin\mayapy.exe" "W:\vy\efx\MSL_batch_Arena\step3_submit_deadline.py" --shotcodes 101_0320_0020
+
+rem # "C:\Program Files\Autodesk\Maya2025\bin\mayapy.exe" "W:\vy\efx\MSL_batch_Arena\step1_export_shot.py" --shotcodes 101_0280_0060
+rem # "C:\Program Files\Autodesk\Maya2025\bin\mayapy.exe" "W:\vy\efx\MSL_batch_Arena\step2_build_arena.py" --shotcodes 101_0280_0060
+rem # "C:\Program Files\Autodesk\Maya2025\bin\mayapy.exe" "W:\vy\efx\MSL_batch_Arena\step3_submit_deadline.py" --shotcode 101_0280_0060
+
+rem # 280
+rem # "C:\Program Files\Autodesk\Maya2025\bin\mayapy.exe" "W:\vy\efx\MSL_batch_Arena\step1_export_shot.py" --shotcodes 101_0280_0070 101_0280_0080 101_0280_0120 101_0280_0190
+rem # "C:\Program Files\Autodesk\Maya2025\bin\mayapy.exe" "W:\vy\efx\MSL_batch_Arena\step2_build_arena.py" --shotcodes 101_0280_0070 101_0280_0080 101_0280_0120 101_0280_0190
+rem # "C:\Program Files\Autodesk\Maya2025\bin\mayapy.exe" "W:\vy\efx\MSL_batch_Arena\step3_submit_deadline.py" --shotcode 101_0280_0070 101_0280_0080 101_0280_0120 101_0280_0190
+
+rem ---------------run-------------------
+rem 320 
+rem "C:\Program Files\Autodesk\Maya2025\bin\mayapy.exe" "W:\vy\efx\MSL_batch_Arena\step1_export_shot.py" --shotcodes 101_0320_0010 101_0320_0020 101_0320_0030 101_0320_0040 101_0320_0050 101_0320_0060 101_0320_0070 101_0320_0110 101_0320_0180 101_0320_0200 101_0320_0230
+rem "C:\Program Files\Autodesk\Maya2025\bin\mayapy.exe" "W:\vy\efx\MSL_batch_Arena\step2_build_arena.py" --shotcodes 101_0320_0010 101_0320_0020 101_0320_0030 101_0320_0040 101_0320_0050 101_0320_0060 101_0320_0070 101_0320_0110 101_0320_0180 101_0320_0200 101_0320_0230
+rem "C:\Program Files\Autodesk\Maya2025\bin\mayapy.exe" "W:\vy\efx\MSL_batch_Arena\step3_submit_deadline.py" --shotcode 101_0320_0010 101_0320_0020 101_0320_0030 101_0320_0040 101_0320_0050 101_0320_0060 101_0320_0070 101_0320_0110 101_0320_0180 101_0320_0200 101_0320_0230
+
+rem 032A
+rem "C:\Program Files\Autodesk\Maya2025\bin\mayapy.exe" "W:\vy\efx\MSL_batch_Arena\step1_export_shot.py" --shotcodes 101_032A_0010 101_032A_0020 101_032A_0030 101_032A_0040 101_032A_0050 101_032A_0060 101_032A_0070 101_032A_0090 101_032A_0110 101_032A_0130 101_032A_0150
+rem "C:\Program Files\Autodesk\Maya2025\bin\mayapy.exe" "W:\vy\efx\MSL_batch_Arena\step2_build_arena.py" --shotcodes 101_032A_0010 101_032A_0020 101_032A_0030 101_032A_0040 101_032A_0050 101_032A_0060 101_032A_0070 101_032A_0090 101_032A_0110 101_032A_0130 101_032A_0150
+rem "C:\Program Files\Autodesk\Maya2025\bin\mayapy.exe" "W:\vy\efx\MSL_batch_Arena\step3_submit_deadline.py" --shotcode 101_032A_0010 101_032A_0020 101_032A_0030 101_032A_0040 101_032A_0050 101_032A_0060 101_032A_0070 101_032A_0090 101_032A_0110 101_032A_0130 101_032A_0150
+
+rem 032B
+rem "C:\Program Files\Autodesk\Maya2025\bin\mayapy.exe" "W:\vy\efx\MSL_batch_Arena\step1_export_shot.py" --shotcodes 101_032B_0010 101_032B_0030 101_032B_0040
+rem "C:\Program Files\Autodesk\Maya2025\bin\mayapy.exe" "W:\vy\efx\MSL_batch_Arena\step2_build_arena.py" --shotcodes 101_032B_0010 101_032B_0030 101_032B_0040
+rem "C:\Program Files\Autodesk\Maya2025\bin\mayapy.exe" "W:\vy\efx\MSL_batch_Arena\step3_submit_deadline.py" --shotcode 101_032B_0010 101_032B_0030 101_032B_0040
+
+rem 0340
+rem "C:\Program Files\Autodesk\Maya2025\bin\mayapy.exe" "W:\vy\efx\MSL_batch_Arena\step1_export_shot.py" --shotcodes 101_0340_0010 101_0340_0020 101_0340_0030 101_0340_0040 101_0340_0070 101_0340_0080 101_0340_0100 101_0340_0110 101_0340_0120 101_0340_0150 101_0340_0170 101_0340_0180 101_0340_0190 101_0340_0200 101_0340_0210 101_0340_0230 101_0340_0240 101_0340_0250 101_0340_0260 101_0340_0270 101_0340_0280 101_0340_0290
+rem "C:\Program Files\Autodesk\Maya2025\bin\mayapy.exe" "W:\vy\efx\MSL_batch_Arena\step2_build_arena.py" --shotcodes 101_0340_0010 101_0340_0020 101_0340_0030 101_0340_0040 101_0340_0070 101_0340_0080 101_0340_0100 101_0340_0110 101_0340_0120 101_0340_0150 101_0340_0170 101_0340_0180 101_0340_0190 101_0340_0200 101_0340_0210 101_0340_0230 101_0340_0240 101_0340_0250 101_0340_0260 101_0340_0270 101_0340_0280 101_0340_0290
+rem "C:\Program Files\Autodesk\Maya2025\bin\mayapy.exe" "W:\vy\efx\MSL_batch_Arena\step3_submit_deadline.py" --shotcode 101_0340_0010 101_0340_0020 101_0340_0030 101_0340_0040 101_0340_0070 101_0340_0080 101_0340_0100 101_0340_0110 101_0340_0120 101_0340_0150 101_0340_0170 101_0340_0180 101_0340_0190 101_0340_0200 101_0340_0210 101_0340_0230 101_0340_0240 101_0340_0250 101_0340_0260 101_0340_0270 101_0340_0280 101_0340_0290
+ 
+rem "C:\Program Files\Autodesk\Maya2025\bin\mayapy.exe" "W:\vy\efx\MSL_batch_Arena\step1_export_shot.py" --shotcodes 101_0360_0010 101_0360_0020 101_0360_0040 101_0360_0060 101_0360_0080 101_0360_0100 101_0360_0150 101_0360_0180 101_0360_0190 101_0360_0240 101_0360_0250 101_0360_0260 101_0360_0320
+rem "C:\Program Files\Autodesk\Maya2025\bin\mayapy.exe" "W:\vy\efx\MSL_batch_Arena\step2_build_arena.py" --shotcodes 101_0360_0010 101_0360_0020 101_0360_0040 101_0360_0060 101_0360_0080 101_0360_0100 101_0360_0150 101_0360_0180 101_0360_0190 101_0360_0240 101_0360_0250 101_0360_0260 101_0360_0320
+"C:\Program Files\Autodesk\Maya2025\bin\mayapy.exe" "W:\vy\efx\MSL_batch_Arena\step3_submit_deadline.py" --shotcodes 101_0360_0010 101_0360_0020 101_0360_0040 101_0360_0060 101_0360_0080 101_0360_0100 101_0360_0150 101_0360_0180 101_0360_0190 101_0360_0240 101_0360_0250 101_0360_0260 101_0360_0320
+
+rem "C:\Program Files\Autodesk\Maya2025\bin\mayapy.exe" "W:\vy\efx\MSL_batch_Arena\step1_export_shot.py" --shotcodes 101_036A_0010 101_036A_0020 101_036A_0030 101_036A_0050 101_036A_0060 101_036A_0080 101_036A_0110 101_036A_0130 101_036A_0140 101_036A_0170 101_036A_0200 101_036A_0210 101_036A_0220 101_036A_0230
+rem "C:\Program Files\Autodesk\Maya2025\bin\mayapy.exe" "W:\vy\efx\MSL_batch_Arena\step2_build_arena.py" --shotcodes 101_036A_0010 101_036A_0020 101_036A_0030 101_036A_0050 101_036A_0060 101_036A_0080 101_036A_0110 101_036A_0130 101_036A_0140 101_036A_0170 101_036A_0200 101_036A_0210 101_036A_0220 101_036A_0230
+"C:\Program Files\Autodesk\Maya2025\bin\mayapy.exe" "W:\vy\efx\MSL_batch_Arena\step3_submit_deadline.py" --shotcodes 101_036A_0010 101_036A_0020 101_036A_0030 101_036A_0050 101_036A_0060 101_036A_0080 101_036A_0110 101_036A_0130 101_036A_0140 101_036A_0170 101_036A_0200 101_036A_0210 101_036A_0220 101_036A_0230
+
+
+
+
+

@@ -30,6 +30,13 @@ venv\Scripts\activate
 pip install -e .[build]
 ```
 
+For local setup, copy the example config files and adjust the paths for your machine:
+
+```powershell
+Copy-Item .\msl_batch_arena_gui_config.example.json .\msl_batch_arena_gui_config.json
+Copy-Item .\msl_qc_viewer_config.example.json .\msl_qc_viewer_config.json
+```
+
 ## Run
 
 ```bash
@@ -81,6 +88,7 @@ dist\ArenaApp\ArenaApp.exe
 - This app is a Tk desktop GUI, so the packaged `.exe` can be launched directly.
 - The Maya scripts and scene files are still read from the paths you enter in the app, so those assets must also exist on the offline machine or shared storage visible from that machine.
 - The Tk version currently stores config in `msl_batch_arena_gui_config.json` next to the app.
+- A safe template is provided in `msl_batch_arena_gui_config.example.json`.
 
 ## Features
 
@@ -92,6 +100,7 @@ dist\ArenaApp\ArenaApp.exe
 - Command preview
 - Live execution log
 - Config persistence in `msl_batch_arena_gui_config.json`
+- Example config files for Git-friendly setup
 
 ## Default assumptions
 

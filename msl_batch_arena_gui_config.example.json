@@ -1,0 +1,16 @@
+{
+  "mayapy_path": "C:\\Program Files\\Autodesk\\Maya2025\\bin\\mayapy.exe",
+  "project_root": "D:\\path\\to\\project",
+  "source_scripts_root": "D:\\path\\to\\MSL_batch_Arena",
+  "step1_path": "D:\\path\\to\\MSL_batch_Arena\\step1_export_shot.py",
+  "step2_path": "D:\\path\\to\\MSL_batch_Arena\\step2_build_arena.py",
+  "step3_path": "D:\\path\\to\\MSL_batch_Arena\\step3_submit_deadline.py",
+  "arena_scene": "D:\\path\\to\\Arena_Light_setC_v001.ma",
+  "version_note": "",
+  "json_note": "",
+  "extra_step1_args": "",
+  "extra_step2_args": "",
+  "extra_step3_args": "",
+  "step2_custom1": "auto",
+  "step3_custom_name2": "lighting"
+}

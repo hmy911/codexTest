@@ -4,3 +4,8 @@ __pycache__/
 build/
 dist/
 *.spec
+venv/
+.venv/
+msl_batch_arena_gui_config.json
+msl_qc_viewer_config.json
+UPLOAD_TO_GITHUB_GUIDE_zh-TW.md
