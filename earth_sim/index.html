@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>地球小博士 3D</title>
+<style>
+:root{--bg:#050914;--panel:rgba(14,22,44,.78);--line:rgba(255,255,255,.14);--tx:#eef3ff;--dim:#9fb0d6;--acc:#ffc94a;--acc2:#4fd1ff}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--tx);font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;overflow:hidden;-webkit-user-select:none;user-select:none}
+canvas#c{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none}
+.panel{background:var(--panel);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid var(--line);border-radius:16px;box-shadow:0 6px 24px rgba(0,0,0,.35)}
+button{font:inherit;color:var(--tx);background:rgba(255,255,255,.09);border:1px solid var(--line);border-radius:12px;padding:6px 11px;cursor:pointer;transition:.15s}
+button:hover{background:rgba(255,255,255,.18)}
+button.on{background:var(--acc);color:#231a00;border-color:var(--acc);font-weight:700}
+#top{position:fixed;top:10px;left:10px;right:10px;display:flex;gap:10px;align-items:center;justify-content:space-between;pointer-events:none;flex-wrap:wrap}
+#top>*{pointer-events:auto}
+#title{padding:8px 14px;font-weight:800;font-size:18px;letter-spacing:.5px}
+#title small{font-weight:400;color:var(--dim);margin-left:8px;font-size:12px}
+#tabs{display:flex;gap:6px;padding:5px}
+#tabs button{font-size:15px;padding:8px 14px}
+#info{position:fixed;left:10px;top:64px;width:min(330px,calc(100vw - 20px));padding:12px 14px;max-height:calc(100vh - 250px);overflow:auto}
+#info h3{margin:0 0 6px;font-size:15px;color:var(--acc)}
+#clock{font-size:22px;font-weight:800;line-height:1.2}
+.row{display:flex;justify-content:space-between;gap:8px;font-size:13.5px;padding:3px 0;border-bottom:1px dashed rgba(255,255,255,.08)}
+.row b{color:var(--acc2)}
+#tip{margin-top:9px;font-size:14px;line-height:1.55;background:rgba(255,201,74,.11);border:1px solid rgba(255,201,74,.35);border-radius:12px;padding:8px 10px}
+#lessons{margin-top:9px;display:flex;flex-wrap:wrap;gap:5px}
+#lessons button{font-size:12.5px;padding:5px 8px}
+#dock{position:fixed;left:10px;bottom:10px;width:min(760px,calc(100vw - 20px));padding:10px 12px;display:grid;gap:7px}
+#dock .line{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+#dock label{font-size:12.5px;color:var(--dim);min-width:52px}
+#dock input[type=range]{flex:1;min-width:120px;accent-color:var(--acc)}
+#dock .val{min-width:96px;text-align:right;font-weight:700;font-size:13.5px}
+.chips{display:flex;gap:5px;flex-wrap:wrap}
+.chips button{padding:4px 9px;font-size:13px}
+#lab{position:fixed;right:10px;top:64px;width:min(250px,calc(100vw - 20px));padding:10px 12px;font-size:13px}
+#lab.hide .body{display:none}
+#lab h3{margin:0;font-size:14px;color:var(--acc);display:flex;justify-content:space-between;cursor:pointer}
+#lab .body{margin-top:8px;display:grid;gap:6px}
+#lab label.chk{display:flex;gap:6px;align-items:center;cursor:pointer}
+#lab input[type=range]{width:100%;accent-color:var(--acc2)}
+#sub{position:fixed;right:10px;top:auto;bottom:auto;display:none}
+#viewbtns{position:fixed;left:50%;top:64px;transform:translateX(-50%);display:flex;gap:6px;padding:5px}
+#inset{position:fixed;right:10px;bottom:10px;width:270px;height:170px;border:2px solid rgba(255,255,255,.55);border-radius:14px;cursor:pointer;box-shadow:0 6px 24px rgba(0,0,0,.5)}
+#inset span{position:absolute;left:8px;top:6px;font-size:12px;background:rgba(0,0,0,.55);border-radius:8px;padding:2px 7px;pointer-events:none}
+#hud{position:fixed;left:50%;top:118px;transform:translateX(-50%);font-size:13px;padding:5px 12px;border-radius:12px;background:rgba(0,0,0,.45);pointer-events:none;white-space:nowrap}
+#labels{position:fixed;inset:0;pointer-events:none;overflow:hidden}
+.lb{position:absolute;left:0;top:0;transform:translate(-50%,-130%);font-size:13px;font-weight:700;color:#fff;text-shadow:0 0 4px #000,0 0 8px #000;white-space:nowrap;will-change:transform}
+.lb.sun{color:#ffd76a;font-size:15px}.lb.moon{color:#e8ecff}
+.lb.star{color:#bfe3ff;font-weight:500;font-size:12px;transform:translate(-50%,8px)}
+.lb.line{color:#ffb86b;font-size:12px;font-weight:500}
+.lb.tw{color:#ff7a7a;font-size:14px}
+.lb.dir{font-size:20px;color:#fff;transform:translate(-50%,-50%)}
+.lb.jump{pointer-events:auto;cursor:pointer;background:rgba(0,0,0,.55);border:1px solid var(--acc);border-radius:10px;padding:2px 8px;color:var(--acc)}
+.lb.jump:hover{background:var(--acc);color:#000}
+#modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:9}
+#modal .box{max-width:520px;width:calc(100% - 30px);padding:18px 20px;line-height:1.7;font-size:15px}
+#msg{position:fixed;inset:0;display:none;align-items:center;justify-content:center;font-size:18px;text-align:center;z-index:20;background:#050914}
+@media (max-width:860px){
+ #info{top:112px;width:min(300px,calc(100vw - 20px));max-height:34vh}
+ #lab{top:auto;bottom:calc(var(--dockh,190px) + 20px);right:10px}
+ #inset{top:112px;bottom:auto;width:130px;height:84px}
+ #viewbtns{top:auto;bottom:calc(var(--dockh,190px) + 20px);left:10px;transform:none}
+ #title small{display:none}
+ #hud{display:none}
+}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="labels"></div>
+
+<div id="top">
+  <div id="title" class="panel">🌍 地球小博士 3D<small>自轉・公轉・四季・日月星辰</small></div>
+  <div id="tabs" class="panel">
+    <button id="tabSpace" class="on">🌌 太陽系視角</button>
+    <button id="tabSky">🇹🇼 台灣看天空</button>
+  </div>
+</div>
+
+<div id="info" class="panel">
+  <div id="clock">--</div>
+  <div id="rows"></div>
+  <div id="tip"></div>
+  <div style="margin:9px 0 3px;font-size:12.5px;color:var(--dim)">🎓 小教室：點一下看示範</div>
+  <div id="lessons"></div>
+</div>
+
+<div id="viewbtns" class="panel"></div>
+
+<div id="lab" class="panel">
+  <h3 id="labHead"><span>🔬 實驗室</span><span id="labArrow">▾</span></h3>
+  <div class="body">
+    <div>🧲 地軸傾斜：<b id="tiltVal">23.4°</b>
+      <input id="tilt" type="range" min="0" max="60" step="0.1" value="23.44">
+      <div style="display:flex;gap:5px;margin-top:4px"><button id="tilt0">變成 0°</button><button id="tilt23">回到真實</button></div>
+    </div>
+    <label class="chk"><input type="checkbox" id="cbLines" checked> 赤道・回歸線・極圈</label>
+    <label class="chk"><input type="checkbox" id="cbNames" checked> 顯示名稱</label>
+    <label class="chk" id="rowGhost"><input type="checkbox" id="cbGhost" checked> 四季的地球（小）</label>
+    <label class="chk" id="rowOrbit"><input type="checkbox" id="cbMoonOrbit" checked> 月亮軌道</label>
+    <label class="chk" id="rowCon"><input type="checkbox" id="cbCon" checked> 星座連線</label>
+    <label class="chk" id="rowPath"><input type="checkbox" id="cbPath" checked> 今天太陽的路線</label>
+    <label class="chk" id="rowCloud"><input type="checkbox" id="cbCloud" checked> 雲</label>
+  </div>
+</div>
+
+<div id="hud"></div>
+<div id="inset"><span id="insetLbl"></span></div>
+
+<div id="dock" class="panel">
+  <div class="line">
+    <label>📅 日期</label><input id="date" type="range" min="0" max="364" step="1"><span class="val" id="dateVal"></span>
+  </div>
+  <div class="line">
+    <label>🕒 時間</label><input id="hour" type="range" min="0" max="24" step="0.01"><span class="val" id="hourVal"></span>
+  </div>
+  <div class="line">
+    <button id="play">⏸ 暫停</button>
+    <div class="chips" id="speeds"></div>
+  </div>
+  <div class="line">
+    <label>快速跳到</label>
+    <div class="chips" id="jumps"></div>
+  </div>
+  <div class="line">
+    <label>🌙 月相</label>
+    <div class="chips" id="moons"></div>
+  </div>
+</div>
+
+<div id="modal"><div class="box panel"><div id="modalBody"></div><div style="text-align:right;margin-top:10px"><button id="modalClose">知道了 👍</button></div></div></div>
+<div id="msg">⚠️ 無法載入 three.js，請確認 lib 資料夾存在。</div>
+
+<script src="lib/three.min.js"></script>
+<script src="lib/OrbitControls.js"></script>
+<script src="lib/textures.js"></script>
+<script>
+"use strict";
+if(typeof THREE==='undefined'){document.getElementById('msg').style.display='flex';throw new Error('no three');}
+const $=id=>document.getElementById(id);
+const D2R=Math.PI/180, TAU=Math.PI*2;
+const LAT=23.7, LON=121.0;                 // 台灣（約在南投）
+const YEAR=365.2422, SYN=29.5306, NODE_P=27.2122;
+const EVENTS=[78.95,171.68,265.34,355.2];  // 2026 春分/夏至/秋分/冬至（從1/1 0:00算起的天數，台灣時間）
+const NEWMOON0=18.16;                      // 2026/1/19 03:52 新月
+const R_ORB=50, R_EARTH=3, R_SUN=7, R_MOON=0.82, D_MOON=8.5;
+const UP=new THREE.Vector3(0,1,0);
+
+/* ===================== 狀態 ===================== */
+const S={
+  T:(Date.now()-Date.UTC(2026,0,1))/864e5+8/24, // 現在（台灣時間）
+  speed:1/24, playing:true, tilt:23.44, view:'space', focus:'system',
+  lines:true, names:true, ghost:true, moonOrbit:true, con:true, path:true, cloud:true, lesson:null
+};
+const A=new THREE.Vector3(), tiltQ=new THREE.Quaternion(), tiltQinv=new THREE.Quaternion();
+function setTilt(deg){S.tilt=deg;const e=deg*D2R;A.set(-Math.sin(e),Math.cos(e),0);tiltQ.setFromUnitVectors(UP,A);tiltQinv.copy(tiltQ).invert();}
+setTilt(23.44);
+
+/* ===================== 天文計算 ===================== */
+function orbitAngle(T){
+  const t0=EVENTS[0], ev=[EVENTS[0],EVENTS[1],EVENTS[2],EVENTS[3],EVENTS[0]+YEAR];
+  const x=(((T-t0)%YEAR)+YEAR)%YEAR+t0;
+  for(let i=0;i<4;i++) if(x<ev[i+1]) return (-90+90*i+90*(x-ev[i])/(ev[i+1]-ev[i]))*D2R;
+  return 270*D2R;
+}
+function frame(T){
+  const f={T};
+  const phi=orbitAngle(T); f.phi=phi;
+  f.earth=new THREE.Vector3(R_ORB*Math.cos(phi),0,-R_ORB*Math.sin(phi));
+  f.S=f.earth.clone().multiplyScalar(-1/R_ORB);             // 地球→太陽（單位向量）
+  const h=(((T%1)+1)%1)*24; f.hour=h;
+  const sp=f.S.clone().applyQuaternion(tiltQinv);
+  const as=Math.atan2(-sp.z,sp.x);                          // 太陽在「地軸座標」的經度
+  f.spin=as+(h-12)*15*D2R-LON*D2R;
+  const q=new THREE.Quaternion().setFromAxisAngle(UP,f.spin);
+  f.M=tiltQ.clone().multiply(q);
+  const la=LAT*D2R, lo=LON*D2R;
+  f.U=new THREE.Vector3(Math.cos(la)*Math.cos(lo),Math.sin(la),-Math.cos(la)*Math.sin(lo)).applyQuaternion(f.M);
+  f.E=new THREE.Vector3(-Math.sin(lo),0,-Math.cos(lo)).applyQuaternion(f.M);
+  f.N=new THREE.Vector3(-Math.sin(la)*Math.cos(lo),Math.cos(la),Math.sin(la)*Math.sin(lo)).applyQuaternion(f.M);
+  f.decl=Math.asin(THREE.MathUtils.clamp(f.S.dot(A),-1,1))/D2R;   // 太陽直射緯度
+  f.psi=(((TAU*(T-NEWMOON0)/SYN)%TAU)+TAU)%TAU;                  // 月相角 0=新月 π=滿月
+  const m=f.S.clone().applyAxisAngle(UP,f.psi);
+  m.y+=0.0897*Math.sin(TAU*T/NODE_P); f.moon=m.normalize();
+  f.illum=(1-Math.cos(f.psi))/2;
+  f.sunAlt=Math.asin(THREE.MathUtils.clamp(f.S.dot(f.U),-1,1))/D2R;
+  f.moonAlt=Math.asin(THREE.MathUtils.clamp(f.moon.dot(f.U),-1,1))/D2R;
+  return f;
+}
+const toSky=(v,f,out)=>(out||new THREE.Vector3()).set(v.dot(f.E),v.dot(f.U),-v.dot(f.N));
+function dayLength(decl){ // 台灣白天長度（小時）
+  const c=-Math.tan(LAT*D2R)*Math.tan(decl*D2R);
+  if(c>=1)return 0; if(c<=-1)return 24; return 2*Math.acos(c)/D2R/15;
+}
+const fmtHM=h=>{h=((h%24)+24)%24;let m=Math.round(h*60);const H=Math.floor(m/60)%24;return String(H).padStart(2,'0')+':'+String(m%60).padStart(2,'0');};
+const WD=['日','一','二','三','四','五','六'];
+function dateOf(T){return new Date(Date.UTC(2026,0,1)+Math.floor(T)*864e5);}
+function dateStr(T,full){const d=dateOf(T);let s=`${d.getUTCFullYear()}年${d.getUTCMonth()+1}月${d.getUTCDate()}日`;return full?s+`（${WD[d.getUTCDay()]}）`:`${d.getUTCMonth()+1}月${d.getUTCDate()}日`;}
+const MOON_NAMES=[[15,'新月 🌑'],[60,'眉月（娥眉月）🌒'],[105,'上弦月 🌓'],[165,'盈凸月 🌔'],[195,'滿月 🌕'],[255,'虧凸月 🌖'],[285,'下弦月 🌗'],[345,'殘月 🌘'],[361,'新月 🌑']];
+const moonName=psi=>{const d=psi/D2R;for(const [m,n] of MOON_NAMES)if(d<m)return n;return MOON_NAMES[0][1];};
+const SEASON=['春','夏','秋','冬'];
+const SEAS_DAY=EVENTS.map(Math.floor);
+const seasonOfT=T=>{const x=(((Math.floor(T)-SEAS_DAY[0])%365)+365)%365;let k=0;SEAS_DAY.forEach((d,i)=>{if(x>=d-SEAS_DAY[0])k=i;});return k;};
+
+/* ===================== 渲染器 ===================== */
+const canvas=$('c');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:false,preserveDrawingBuffer:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+
+/* ---- 貼圖（先用手繪版，內嵌真實貼圖載入後替換） ---- */
+function cvs(w,h){const c=document.createElement('canvas');c.width=w;c.height=h;return c;}
+function fallbackEarth(){
+  const c=cvs(1024,512),g=c.getContext('2d');g.fillStyle='#1c5fa8';g.fillRect(0,0,1024,512);g.fillStyle='#3f9a47';
+  const P=(pts)=>{g.beginPath();pts.forEach(([lo,la],i)=>{const x=(lo+180)/360*1024,y=(90-la)/180*512;i?g.lineTo(x,y):g.moveTo(x,y);});g.closePath();g.fill();};
+  P([[-165,65],[-130,70],[-95,72],[-60,60],[-55,48],[-75,38],[-82,25],[-97,20],[-88,14],[-80,8],[-105,22],[-125,40],[-150,58]]);
+  P([[-80,8],[-60,10],[-35,-6],[-40,-22],[-58,-38],[-68,-54],[-75,-40],[-72,-15],[-80,-3]]);
+  P([[-10,36],[-8,55],[30,70],[100,76],[170,68],[140,45],[122,30],[105,10],[80,8],[55,25],[35,32],[28,45],[0,45]]);
+  P([[-17,20],[-10,35],[10,37],[32,31],[42,12],[51,10],[35,-20],[20,-35],[12,-15],[8,4],[-10,5]]);
+  P([[114,-22],[130,-12],[146,-18],[153,-30],[140,-38],[116,-34]]);
+  P([[-180,-70],[180,-70],[180,-90],[-180,-90]]);P([[-55,60],[-20,82],[-20,70],[-45,60]]);
+  return new THREE.CanvasTexture(c);
+}
+function solid(col){const c=cvs(8,8),g=c.getContext('2d');g.fillStyle=col;g.fillRect(0,0,8,8);return new THREE.CanvasTexture(c);}
+function fallbackMoon(){const c=cvs(256,128),g=c.getContext('2d');g.fillStyle='#b9b9b9';g.fillRect(0,0,256,128);
+  for(let i=0;i<70;i++){g.fillStyle=`rgba(80,80,80,${Math.random()*.4})`;g.beginPath();g.arc(Math.random()*256,Math.random()*128,2+Math.random()*9,0,TAU);g.fill();}return new THREE.CanvasTexture(c);}
+const tex={earth:fallbackEarth(),lights:solid('#000'),clouds:null,moon:fallbackMoon()};
+const uniformsEarth={dayMap:{value:tex.earth},nightMap:{value:tex.lights},sunDir:{value:new THREE.Vector3(1,0,0)}};
+const moonUniforms=[];
+function loadTex(key,onload){
+  if(!window.TEX||!TEX[key])return;
+  new THREE.TextureLoader().load(TEX[key],t=>{t.anisotropy=8;tex[key]=t;onload&&onload(t);});
+}
+function glowTexture(inner,outer){const c=cvs(128,128),g=c.getContext('2d');const gr=g.createRadialGradient(64,64,0,64,64,64);gr.addColorStop(0,inner);gr.addColorStop(.25,outer);gr.addColorStop(1,'rgba(255,200,80,0)');g.fillStyle=gr;g.fillRect(0,0,128,128);return new THREE.CanvasTexture(c);}
+const dotTex=(()=>{const c=cvs(32,32),g=c.getContext('2d');const gr=g.createRadialGradient(16,16,0,16,16,16);gr.addColorStop(0,'#fff');gr.addColorStop(.4,'rgba(255,255,255,.8)');gr.addColorStop(1,'rgba(255,255,255,0)');g.fillStyle=gr;g.fillRect(0,0,32,32);return new THREE.CanvasTexture(c);})();
+
+/* ---- 月球材質（月相：由太陽方向照亮） ---- */
+function makeMoonMat(){
+  const u={map:{value:tex.moon},sunDir:{value:new THREE.Vector3(1,0,0)},shine:{value:0.05}};
+  moonUniforms.push(u);
+  return new THREE.ShaderMaterial({uniforms:u,fog:false,
+    vertexShader:`varying vec2 vUv;varying vec3 vN;void main(){vUv=uv;vN=normalize(mat3(modelMatrix)*normal);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
+    fragmentShader:`uniform sampler2D map;uniform vec3 sunDir;uniform float shine;varying vec2 vUv;varying vec3 vN;
+      void main(){float l=smoothstep(-0.02,0.22,dot(normalize(vN),sunDir));vec3 c=texture2D(map,vUv).rgb*1.25;gl_FragColor=vec4(c*(l+shine),1.);}`});
+}
+
+/* ===================== 場景 A：太陽系 ===================== */
+const space=new THREE.Scene(); space.background=new THREE.Color(0x02030a);
+const camSpace=new THREE.PerspectiveCamera(50,1,0.1,4000); camSpace.position.set(0,90,120);
+const controls=new THREE.OrbitControls(camSpace,canvas);
+controls.enableDamping=true;controls.dampingFactor=.08;controls.minDistance=5;controls.maxDistance=400;controls.maxPolarAngle=Math.PI*0.95;
+const camInset=new THREE.PerspectiveCamera(40,1,0.1,4000);
+
+function starField(n,r,size,scene,vertexColors=true){
+  const p=new Float32Array(n*3),c=new Float32Array(n*3);
+  for(let i=0;i<n;i++){const u=Math.random()*2-1,a=Math.random()*TAU,s=Math.sqrt(1-u*u);
+    p.set([r*s*Math.cos(a),r*u,r*s*Math.sin(a)],i*3);
+    const b=.45+Math.random()*.55,t=Math.random();c.set([b*(t<.2?1:.85+.15*t),b*(.9+.1*t),b*(t>.75?1:.8+.2*t)],i*3);}
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(p,3));g.setAttribute('color',new THREE.BufferAttribute(c,3));
+  const m=new THREE.PointsMaterial({size,map:dotTex,vertexColors,transparent:true,depthWrite:false,sizeAttenuation:false,fog:false});
+  const pts=new THREE.Points(g,m);scene.add(pts);return pts;
+}
+starField(1600,1500,2.2,space);
+
+// 太陽
+const sunMesh=new THREE.Mesh(new THREE.SphereGeometry(R_SUN,48,32),new THREE.MeshBasicMaterial({color:0xffd447}));
+space.add(sunMesh);
+const sunGlow=new THREE.Sprite(new THREE.SpriteMaterial({map:glowTexture('rgba(255,250,220,1)','rgba(255,190,60,.55)'),blending:THREE.AdditiveBlending,depthWrite:false,transparent:true}));
+sunGlow.scale.set(R_SUN*6,R_SUN*6,1);space.add(sunGlow);
+const sunLight=new THREE.PointLight(0xffffff,1.9,0,0);space.add(sunLight);
+space.add(new THREE.AmbientLight(0x6070a0,0.32));
+
+// 公轉軌道 + 黃道面
+const orbitPts=[];for(let i=0;i<=256;i++){const a=i/256*TAU;orbitPts.push(new THREE.Vector3(R_ORB*Math.cos(a),0,-R_ORB*Math.sin(a)));}
+const orbitLine=new THREE.Line(new THREE.BufferGeometry().setFromPoints(orbitPts),new THREE.LineBasicMaterial({color:0x6fa8ff,transparent:true,opacity:.8}));
+space.add(orbitLine);
+const plane=new THREE.Mesh(new THREE.RingGeometry(R_SUN+1,R_ORB+9,96,1),new THREE.MeshBasicMaterial({color:0x2a4a9a,transparent:true,opacity:.09,side:THREE.DoubleSide,depthWrite:false}));
+plane.rotation.x=-Math.PI/2;space.add(plane);
+
+// 地球
+const earthRoot=new THREE.Group();space.add(earthRoot);
+const tiltGroup=new THREE.Group();earthRoot.add(tiltGroup);
+const earthMat=new THREE.ShaderMaterial({uniforms:uniformsEarth,
+  vertexShader:`varying vec2 vUv;varying vec3 vN;void main(){vUv=uv;vN=normalize(mat3(modelMatrix)*normal);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
+  fragmentShader:`uniform sampler2D dayMap,nightMap;uniform vec3 sunDir;varying vec2 vUv;varying vec3 vN;
+    void main(){float d=dot(normalize(vN),sunDir);float day=smoothstep(-0.10,0.16,d);
+      vec3 dc=texture2D(dayMap,vUv).rgb;vec3 lit=dc*(0.30+0.85*max(d,0.0));
+      vec3 night=dc*vec3(0.02,0.03,0.07)+texture2D(nightMap,vUv).rgb*vec3(1.5,1.2,0.7);
+      vec3 col=mix(night,lit,day);col+=vec3(1.,.45,.15)*exp(-pow(d/0.09,2.))*0.16;
+      gl_FragColor=vec4(col,1.);}`});
+const earthMesh=new THREE.Mesh(new THREE.SphereGeometry(R_EARTH,64,48),earthMat);tiltGroup.add(earthMesh);
+const cloudMesh=new THREE.Mesh(new THREE.SphereGeometry(R_EARTH*1.014,48,36),new THREE.MeshLambertMaterial({transparent:true,opacity:.85,depthWrite:false,color:0xffffff}));
+cloudMesh.visible=false;earthMesh.add(cloudMesh);
+const atmo=new THREE.Mesh(new THREE.SphereGeometry(R_EARTH*1.16,48,32),new THREE.ShaderMaterial({transparent:true,side:THREE.BackSide,blending:THREE.AdditiveBlending,depthWrite:false,
+  vertexShader:`varying vec3 vNormal;void main(){vNormal=normalize(normalMatrix*normal);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
+  fragmentShader:`varying vec3 vNormal;void main(){float i=pow(max(0.64-dot(vNormal,vec3(0,0,1.)),0.),3.);gl_FragColor=vec4(.35,.65,1.,1.)*i*1.6;}`}));
+earthRoot.add(atmo);
+loadTex('earth',t=>{uniformsEarth.dayMap.value=t;ghostMat.map=t;ghostMat.needsUpdate=true;});
+loadTex('lights',t=>uniformsEarth.nightMap.value=t);
+loadTex('clouds',t=>{cloudMesh.material.map=t;cloudMesh.material.needsUpdate=true;cloudMesh.visible=S.cloud;});
+loadTex('moon',t=>moonUniforms.forEach(u=>u.map.value=t));
+
+// 地軸 + 緯線圈
+const axisLine=new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,-R_EARTH*1.7,0),new THREE.Vector3(0,R_EARTH*1.7,0)]),new THREE.LineBasicMaterial({color:0xff5577}));
+tiltGroup.add(axisLine);
+const northCone=new THREE.Mesh(new THREE.ConeGeometry(.28,.8,16),new THREE.MeshBasicMaterial({color:0xff5577}));northCone.position.y=R_EARTH*1.7;tiltGroup.add(northCone);
+const unitCircle=[];for(let i=0;i<=128;i++){const a=i/128*TAU;unitCircle.push(new THREE.Vector3(Math.cos(a),0,Math.sin(a)));}
+const circleGeo=new THREE.BufferGeometry().setFromPoints(unitCircle);
+const latRings={};
+function ring(key,color,op){const l=new THREE.LineLoop(circleGeo,new THREE.LineBasicMaterial({color,transparent:true,opacity:op}));tiltGroup.add(l);latRings[key]=l;return l;}
+ring('eq',0xffe066,.95);ring('n',0xff9a3c,.95);ring('s',0x5ad1ff,.95);ring('an',0xbfefff,.6);ring('as',0xbfefff,.6);
+function updateRings(){
+  const e=S.tilt*D2R,r=R_EARTH*1.008;
+  const set=(k,lat)=>{const l=latRings[k],c=Math.cos(lat*D2R);l.scale.set(r*c,1,r*c);l.position.y=r*Math.sin(lat*D2R);};
+  set('eq',0);set('n',S.tilt);set('s',-S.tilt);set('an',90-S.tilt);set('as',-(90-S.tilt));
+  ['eq','n','s','an','as'].forEach(k=>latRings[k].visible=S.lines);
+}
+// 台灣圖釘 & 太陽直射點
+const pin=new THREE.Group();
+{const la=LAT*D2R,lo=LON*D2R,p=new THREE.Vector3(Math.cos(la)*Math.cos(lo),Math.sin(la),-Math.cos(la)*Math.sin(lo));
+ pin.position.copy(p.clone().multiplyScalar(R_EARTH));pin.quaternion.setFromUnitVectors(UP,p);
+ const st=new THREE.Mesh(new THREE.CylinderGeometry(.04,.04,.9,8),new THREE.MeshBasicMaterial({color:0xffffff}));st.position.y=.45;pin.add(st);
+ const hd=new THREE.Mesh(new THREE.SphereGeometry(.24,16,12),new THREE.MeshBasicMaterial({color:0xff3b3b}));hd.position.y=.95;pin.add(hd);
+ earthMesh.add(pin);}
+const subsolar=new THREE.Mesh(new THREE.SphereGeometry(.2,16,12),new THREE.MeshBasicMaterial({color:0xfff27a}));space.add(subsolar);
+const subGlow=new THREE.Sprite(new THREE.SpriteMaterial({map:glowTexture('rgba(255,255,200,1)','rgba(255,220,80,.5)'),blending:THREE.AdditiveBlending,depthWrite:false,transparent:true}));subGlow.scale.set(2.2,2.2,1);subsolar.add(subGlow);
+
+// 月球與軌道
+const moonSpace=new THREE.Mesh(new THREE.SphereGeometry(R_MOON,32,24),makeMoonMat());space.add(moonSpace);
+const moonOrbit=new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(unitCircle.map(v=>v.clone().multiplyScalar(D_MOON))),new THREE.LineBasicMaterial({color:0xaab4d8,transparent:true,opacity:.45}));
+space.add(moonOrbit);
+
+// 四季小地球
+const ghostMat=new THREE.MeshLambertMaterial({map:tex.earth});
+const ghosts=[];
+[[-90,'春分'],[0,'夏至'],[90,'秋分'],[180,'冬至']].forEach(([deg,name],i)=>{
+  const g=new THREE.Group(),a=deg*D2R;g.position.set(R_ORB*Math.cos(a),0,-R_ORB*Math.sin(a));
+  const tg=new THREE.Group();g.add(tg);
+  tg.add(new THREE.Mesh(new THREE.SphereGeometry(2.4,32,24),ghostMat));
+  tg.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,-4.2,0),new THREE.Vector3(0,4.2,0)]),new THREE.LineBasicMaterial({color:0xff5577})));
+  const c=new THREE.Mesh(new THREE.ConeGeometry(.22,.6,12),new THREE.MeshBasicMaterial({color:0xff5577}));c.position.y=4.2;tg.add(c);
+  const lr=new THREE.LineLoop(circleGeo,new THREE.LineBasicMaterial({color:0xffe066,transparent:true,opacity:.7}));lr.scale.setScalar(2.43);tg.add(lr);
+  space.add(g);ghosts.push({g,tg,name,i});
+});
+
+/* ===================== 場景 B：台灣看天空 ===================== */
+const sky=new THREE.Scene();
+const camSky=new THREE.PerspectiveCamera(70,1,0.3,4000);camSky.position.set(0,1.7,0);camSky.rotation.order='YXZ';
+const view={yaw:180*D2R,pitch:22*D2R,tyaw:null,tpitch:null,fov:70};
+sky.fog=new THREE.Fog(0xaad4f0,250,1000);
+
+const domeMat=new THREE.ShaderMaterial({side:THREE.BackSide,depthWrite:false,fog:false,
+  uniforms:{top:{value:new THREE.Color()},hor:{value:new THREE.Color()},sunDir:{value:new THREE.Vector3(0,1,0)},glow:{value:0},glowCol:{value:new THREE.Color(1,.55,.25)}},
+  vertexShader:`varying vec3 vP;void main(){vP=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
+  fragmentShader:`uniform vec3 top,hor,glowCol,sunDir;uniform float glow;varying vec3 vP;
+    void main(){vec3 d=normalize(vP);float h=max(d.y,0.);vec3 c=mix(hor,top,pow(h,.45));
+      float s=max(dot(d,sunDir),0.);c+=glowCol*(pow(s,6.)*.6+pow(s,60.)*.5)*glow*(1.-.6*h);gl_FragColor=vec4(c,1.);}`});
+sky.add(new THREE.Mesh(new THREE.SphereGeometry(1800,32,16),domeMat));
+
+// 地面
+const grass=(()=>{const c=cvs(256,256),g=c.getContext('2d');g.fillStyle='#4e8f3d';g.fillRect(0,0,256,256);
+  for(let i=0;i<2600;i++){const s=Math.random();g.fillStyle=`rgba(${30+s*60|0},${90+s*90|0},${30+s*30|0},.35)`;g.fillRect(Math.random()*256,Math.random()*256,2,3+Math.random()*4);}
+  const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(150,150);t.anisotropy=8;return t;})();
+const ground=new THREE.Mesh(new THREE.CircleGeometry(1500,64),new THREE.MeshLambertMaterial({map:grass}));
+ground.rotation.x=-Math.PI/2;sky.add(ground);
+// 遠山
+const hillMat=new THREE.MeshLambertMaterial({color:0x3d6b4a,flatShading:true});
+for(let i=0;i<46;i++){
+  const a=i/46*TAU+Math.random()*.1,d=380+Math.random()*260,h=25+Math.random()*90*(0.6+0.4*Math.abs(Math.sin(a*1.5)));
+  const m=new THREE.Mesh(new THREE.ConeGeometry(h*1.5+20,h,6+(i%3)),hillMat);m.position.set(Math.sin(a)*d,h/2-2,-Math.cos(a)*d);m.rotation.y=Math.random()*3;sky.add(m);
+}
+// 近處的樹與房子
+const trunkM=new THREE.MeshLambertMaterial({color:0x6b4a2b}),leafM=new THREE.MeshLambertMaterial({color:0x2f7d3a,flatShading:true});
+for(let i=0;i<22;i++){
+  const a=Math.random()*TAU,d=14+Math.random()*60;const t=new THREE.Group();
+  const h=3+Math.random()*3;const tr=new THREE.Mesh(new THREE.CylinderGeometry(.25,.35,h,6),trunkM);tr.position.y=h/2;t.add(tr);
+  const lf=new THREE.Mesh(new THREE.ConeGeometry(1.8+Math.random(),h*1.2,7),leafM);lf.position.y=h+1;t.add(lf);
+  t.position.set(Math.sin(a)*d,0,-Math.cos(a)*d);sky.add(t);
+}
+{const hs=new THREE.Group(),w=new THREE.Mesh(new THREE.BoxGeometry(8,4.5,6),new THREE.MeshLambertMaterial({color:0xf2e7d0}));w.position.y=2.25;hs.add(w);
+ const rf=new THREE.Mesh(new THREE.ConeGeometry(6.4,3,4),new THREE.MeshLambertMaterial({color:0xc4553b}));rf.position.y=6;rf.rotation.y=Math.PI/4;hs.add(rf);
+ hs.position.set(-22,0,-30);hs.rotation.y=.4;sky.add(hs);}
+// 指南針地面標記
+const skyLights={amb:new THREE.AmbientLight(0xffffff,1),sun:new THREE.DirectionalLight(0xfff2d8,1)};
+sky.add(skyLights.amb,skyLights.sun);sky.add(skyLights.sun.target);
+
+// 雲
+const clouds=new THREE.Group();sky.add(clouds);
+const cloudMatSky=new THREE.MeshLambertMaterial({color:0xffffff,transparent:true,opacity:.93,flatShading:false});
+for(let i=0;i<16;i++){
+  const c=new THREE.Group(),n=5+(Math.random()*5|0),w=18+Math.random()*22;
+  for(let k=0;k<n;k++){const s=new THREE.Mesh(new THREE.SphereGeometry(1,12,10),cloudMatSky);const r=w*(.35+Math.random()*.35);
+    s.scale.set(r,r*.45,r*.7);s.position.set((k-n/2)*w*.32+Math.random()*4,Math.random()*5,Math.random()*8-4);c.add(s);}
+  const a=Math.random()*TAU,d=120+Math.random()*420;c.position.set(Math.sin(a)*d,55+Math.random()*60,-Math.cos(a)*d);c.userData.sp=.6+Math.random()*1.2;
+  clouds.add(c);
+}
+
+// 太陽・月亮（天空版）
+const sunSky=new THREE.Mesh(new THREE.SphereGeometry(17,32,24),new THREE.MeshBasicMaterial({color:0xfff6d0,fog:false}));sky.add(sunSky);
+const sunSkyGlow=new THREE.Sprite(new THREE.SpriteMaterial({map:glowTexture('rgba(255,255,235,1)','rgba(255,205,90,.5)'),blending:THREE.AdditiveBlending,depthWrite:false,transparent:true,fog:false}));
+sunSkyGlow.scale.set(190,190,1);sunSky.add(sunSkyGlow);
+const moonHolder=new THREE.Object3D();sky.add(moonHolder);
+const moonSky=new THREE.Mesh(new THREE.SphereGeometry(15,40,30),makeMoonMat());moonSky.rotation.y=-Math.PI/2;moonHolder.add(moonSky);
+const moonSkyGlow=new THREE.Sprite(new THREE.SpriteMaterial({map:glowTexture('rgba(220,230,255,.55)','rgba(180,200,255,.2)'),blending:THREE.AdditiveBlending,depthWrite:false,transparent:true,fog:false}));
+moonSkyGlow.scale.set(90,90,1);moonHolder.add(moonSkyGlow);
+
+// 星空（赤道座標：z=北天極）
+const starGroup=new THREE.Group();starGroup.matrixAutoUpdate=false;sky.add(starGroup);
+const bgStars=starField(1800,900,2.8,sky);sky.remove(bgStars);starGroup.add(bgStars);
+const RS=900;
+const cel=(raH,dec,r=RS)=>{const a=raH*15*D2R,d=dec*D2R;return new THREE.Vector3(Math.cos(d)*Math.cos(a),Math.cos(d)*Math.sin(a),Math.sin(d)).multiplyScalar(r);};
+const CONS=[
+ {name:'北斗七星',stars:[[11.062,61.75],[11.03,56.38],[11.897,53.69],[12.257,57.03],[12.9,55.96],[13.4,54.93],[13.79,49.31]],lines:[[0,1],[1,2],[2,3],[3,0],[3,4],[4,5],[5,6]],label:0},
+ {name:'仙后座',stars:[[0.153,59.15],[0.675,56.54],[0.945,60.72],[1.43,60.24],[1.906,63.67]],lines:[[0,1],[1,2],[2,3],[3,4]],label:2},
+ {name:'獵戶座',stars:[[5.919,7.41],[5.418,6.35],[5.242,-8.2],[5.796,-9.67],[5.679,-1.94],[5.603,-1.2],[5.533,-0.3]],lines:[[0,4],[4,5],[5,6],[6,1],[1,0],[4,3],[6,2],[3,2]],label:5},
+ {name:'天蠍座',stars:[[16.09,-19.81],[16.005,-22.62],[16.353,-25.59],[16.49,-26.43],[16.6,-28.22],[16.837,-34.29],[16.865,-38.05],[16.91,-42.36],[17.56,-37.1]],lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,8]],label:3},
+];
+const conLines=new THREE.Group();starGroup.add(conLines);
+const conPts=[];
+CONS.forEach(c=>{const v=c.stars.map(([h,d])=>cel(h,d));v.forEach(p=>conPts.push(p));
+  c.lines.forEach(([a,b])=>conLines.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([v[a],v[b]]),new THREE.LineBasicMaterial({color:0x6fb7ff,transparent:true,opacity:.55,fog:false}))));c.pos=v[c.label];});
+const extra=[['北極星',2.53,89.26,true],['天狼星',6.752,-16.72],['心宿二',16.49,-26.43],['參宿四',5.919,7.41],['織女星',18.616,38.78],['大角星',14.26,19.18]];
+const named=[...conPts,...extra.map(e=>cel(e[1],e[2]))];
+{const p=new Float32Array(named.length*3);named.forEach((v,i)=>p.set([v.x,v.y,v.z],i*3));
+ const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(p,3));
+ starGroup.add(new THREE.Points(g,new THREE.PointsMaterial({size:9,map:dotTex,color:0xffffff,transparent:true,depthWrite:false,sizeAttenuation:false,fog:false})));}
+const polaris=cel(2.53,89.26);
+const starMats=[];starGroup.traverse(o=>{if(o.material)starMats.push(o.material);});
+
+// 太陽路徑
+const pathGeo=new THREE.BufferGeometry();
+const pathLine=new THREE.Line(pathGeo,new THREE.LineDashedMaterial({color:0xffd447,dashSize:6,gapSize:5,fog:false}));sky.add(pathLine);
+const hourPts=new THREE.Points(new THREE.BufferGeometry(),new THREE.PointsMaterial({color:0xffd447,size:6,sizeAttenuation:false,map:dotTex,transparent:true,depthWrite:false,fog:false}));sky.add(hourPts);
+let pathKey='';
+function rebuildPath(T){
+  const base=Math.floor(T),pts=[],hp=[];
+  for(let h=0;h<=24.001;h+=.25){const f=frame(base+h/24),v=toSky(f.S,f).multiplyScalar(395);pts.push(v);if(Math.abs(h-Math.round(h))<1e-6&&h<24)hp.push(v);}
+  pathGeo.setFromPoints(pts);pathLine.computeLineDistances();hourPts.geometry.setFromPoints(hp);
+}
+
+/* ===================== 標籤系統 ===================== */
+const labelsEl=$('labels'),LB=[];
+function mkLabel(text,cls,view,getPos,opt={}){const el=document.createElement('div');el.className='lb '+cls;el.textContent=text;labelsEl.appendChild(el);
+  el.dataset.t=cls==='star'?'translate(-50%,8px)':cls==='dir'?'translate(-50%,-50%)':'translate(-50%,-130%)';
+  const o={isStar:cls==='star',el,view,getPos,group:opt.group||'names'};if(opt.jump!=null){el.onclick=()=>jumpEvent(opt.jump);}LB.push(o);return o;}
+const _v=new THREE.Vector3();
+function updateLabels(cam,W,H,fr){
+  for(const l of LB){
+    const near=S.view!=='space'||camSpace.position.distanceTo(fr.earth)<45;
+    let show=l.view===S.view&&!(l.isStar&&S.view==='sky'&&fr.sunAlt>-4)&&((l.group!=='lines'&&l.group!=='near')||near)&&(l.group==='names'?S.names:l.group==='lines'?(S.names&&S.lines):l.group==='con'?(S.names&&S.con):l.group==='near'?S.names:true);
+    if(show){const p=l.getPos(fr);if(!p)show=false;else{_v.copy(p).project(cam);if(_v.z>1||_v.z<-1)show=false;
+      else l.el.style.transform=`translate(${(_v.x*.5+.5)*W}px,${(-_v.y*.5+.5)*H}px) `+(l.el.dataset.t||'translate(-50%,-130%)');}}
+    l.el.style.display=show?'block':'none';
+  }
+}
+// 太陽系標籤
+const ex={};
+mkLabel('☀️ 太陽','sun','space',()=>new THREE.Vector3(0,R_SUN+2,0));
+mkLabel('🌍 地球','','space',f=>f.earth.clone().add(new THREE.Vector3(0,R_EARTH*1.5,0)));
+mkLabel('🌙 月亮','moon','space',f=>f.earth.clone().add(f.moon.clone().multiplyScalar(D_MOON)).add(new THREE.Vector3(0,1.4,0)));
+mkLabel('📍 台灣','tw','space',f=>earthMesh.localToWorld(pin.position.clone().multiplyScalar(1.45)),{group:'near'});
+mkLabel('北極','','space',f=>earthMesh.localToWorld(new THREE.Vector3(0,R_EARTH*1.95,0)),{group:'near'});
+mkLabel('公轉軌道','star','space',()=>new THREE.Vector3(R_ORB*.7,0,R_ORB*.7),{group:'names'});
+[['🌱 春分 3/20',0],['☀️ 夏至 6/21',1],['🍂 秋分 9/23',2],['❄️ 冬至 12/22',3]].forEach(([t,i])=>{
+  mkLabel(t,'jump','space',()=>{const a=(-90+90*i)*D2R;return new THREE.Vector3(R_ORB*Math.cos(a),4.2,-R_ORB*Math.sin(a));},{jump:i});
+});
+[['北回歸線','n'],['赤道','eq'],['南回歸線','s'],['北極圈','an']].forEach(([t,k])=>{
+  mkLabel(t,'line','space',f=>{const cam=camSpace.position.clone().sub(f.earth).applyQuaternion(tiltQinv);cam.y=0;if(cam.lengthSq()<1e-6)return null;cam.normalize();
+    const l=latRings[k],p=cam.multiplyScalar(l.scale.x).add(new THREE.Vector3(0,l.position.y,0));return p.applyQuaternion(tiltQ).add(f.earth);},{group:'lines'});
+});
+// 天空標籤
+const skyFrameRef={f:null};
+[['北 N',0,-1],['東 E',1,0],['南 S',0,1],['西 W',-1,0]].forEach(([t,x,z])=>mkLabel(t,'dir','sky',()=>new THREE.Vector3(x*120,9,z*120),{group:'always'}));
+mkLabel('☀️ 太陽','sun','sky',f=>f.sunAlt>-3?sunSky.position.clone().add(new THREE.Vector3(0,26,0)):null,{group:'always'});
+mkLabel('🌙 月亮','moon','sky',f=>f.moonAlt>-3?moonHolder.position.clone().add(new THREE.Vector3(0,24,0)):null,{group:'always'});
+mkLabel('⭐ 北極星','star','sky',f=>polaris.clone().applyMatrix4(starGroup.matrix),{group:'names'});
+CONS.forEach(c=>mkLabel(c.name,'star','sky',f=>c.pos.clone().applyMatrix4(starGroup.matrix),{group:'con'}));
+extra.slice(1).forEach(e=>mkLabel(e[0],'star','sky',f=>cel(e[1],e[2]).applyMatrix4(starGroup.matrix),{group:'names'}));
+mkLabel('🏠','','sky',f=>new THREE.Vector3(-22,10,-30),{group:'names'});
+
+/* ===================== 更新 ===================== */
+const smooth=(a,b,x)=>{const t=THREE.MathUtils.clamp((x-a)/(b-a),0,1);return t*t*(3-2*t);};
+const C=(h)=>new THREE.Color(h);
+const SKYKEYS=[ // sin(太陽高度), top, horizon
+ [-.30,C(0x02040c),C(0x0a1230)],[-.14,C(0x0a1230),C(0x24305f)],[-.05,C(0x1b2a5c),C(0xa8577a)],[.02,C(0x3a5a9e),C(0xff9a5a)],[.12,C(0x4a86d0),C(0xf3c39a)],[.35,C(0x3f8fe0),C(0xa9d8f5)],[1,C(0x2f7fd8),C(0xb4defa)]];
+function skyColors(s,top,hor){
+  let i=0;while(i<SKYKEYS.length-2&&s>SKYKEYS[i+1][0])i++;
+  const a=SKYKEYS[i],b=SKYKEYS[i+1],t=THREE.MathUtils.clamp((s-a[0])/(b[0]-a[0]),0,1);
+  top.copy(a[1]).lerp(b[1],t);hor.copy(a[2]).lerp(b[2],t);
+}
+const tmpTop=new THREE.Color(),tmpHor=new THREE.Color(),tmpV=new THREE.Vector3(),W2S=new THREE.Matrix4(),CELM=new THREE.Matrix4();
+let realClock=0;
+function updateWorld(f,dt){
+  realClock+=dt;
+  // --- 太陽系 ---
+  earthRoot.position.copy(f.earth);tiltGroup.quaternion.copy(tiltQ);
+  earthMesh.rotation.y=f.spin;cloudMesh.rotation.y=realClock*.01;
+  uniformsEarth.sunDir.value.copy(f.S);
+  const mp=f.earth.clone().add(f.moon.clone().multiplyScalar(D_MOON));moonSpace.position.copy(mp);
+  moonSpace.lookAt(f.earth); // 同一面朝向地球
+  moonSpace.rotateY(-Math.PI/2);
+  moonUniforms[0].sunDir.value.copy(mp).multiplyScalar(-1).normalize();
+  moonOrbit.position.copy(f.earth);moonOrbit.visible=S.moonOrbit;
+  subsolar.position.copy(f.earth).addScaledVector(f.S,R_EARTH*1.012);
+  ghosts.forEach(o=>{o.tg.quaternion.copy(tiltQ);o.g.visible=S.ghost&&o.g.position.distanceTo(f.earth)>12;});
+  cloudMesh.visible=S.cloud&&!!cloudMesh.material.map;
+  updateRings();
+  // --- 天空 ---
+  const s=f.S.dot(f.U);
+  skyColors(s,tmpTop,tmpHor);
+  domeMat.uniforms.top.value.copy(tmpTop);domeMat.uniforms.hor.value.copy(tmpHor);
+  toSky(f.S,f,tmpV);domeMat.uniforms.sunDir.value.copy(tmpV);
+  domeMat.uniforms.glow.value=smooth(-.2,.0,s)*(1-smooth(.1,.4,s))*1.4+smooth(-.05,.3,s)*.25;
+  sky.fog.color.copy(tmpHor);sky.background=sky.fog.color;
+  sunSky.position.copy(tmpV).multiplyScalar(400);
+  skyLights.sun.position.copy(tmpV).multiplyScalar(100);
+  const day=smooth(-.08,.25,s),mAlt=f.moon.dot(f.U),moonBoost=f.illum*smooth(-.05,.2,mAlt)*.28;
+  skyLights.sun.intensity=smooth(-.03,.3,s)*.8;
+  skyLights.amb.intensity=.16+.5*day+moonBoost*(1-day);
+  skyLights.amb.color.setRGB(1-.35*(1-day)*(1-moonBoost*2),1-.25*(1-day),1);
+  skyLights.sun.color.setHSL(.11,.9,.6+.35*smooth(0,.4,s)).multiplyScalar(1);
+  const mv=toSky(f.moon,f);moonHolder.position.copy(mv).multiplyScalar(385);moonHolder.lookAt(0,0,0);
+  moonUniforms[1].sunDir.value.copy(toSky(f.S,f));
+  moonSkyGlow.material.opacity=(1-day)*.9*(.3+.7*f.illum);
+  // 星空
+  const starA=THREE.MathUtils.clamp((-s-.03)/.15,0,1)*(1-.55*f.illum*smooth(-.05,.3,mAlt));
+  starMats.forEach(m=>{m.opacity=starA*(m.isLineBasicMaterial?.6:1);m.visible=starA>.01;});
+  conLines.visible=S.con;
+  const Xc=new THREE.Vector3(0,0,-1),Zc=A.clone(),Yc=new THREE.Vector3().crossVectors(Zc,Xc);
+  CELM.makeBasis(Xc,Yc,Zc);
+  W2S.set(f.E.x,f.E.y,f.E.z,0, f.U.x,f.U.y,f.U.z,0, -f.N.x,-f.N.y,-f.N.z,0, 0,0,0,1);
+  starGroup.matrix.multiplyMatrices(W2S,CELM);starGroup.matrixWorldNeedsUpdate=true;
+  // 雲
+  clouds.visible=S.cloud;
+  clouds.children.forEach(c=>{c.position.x+=c.userData.sp*dt*2;if(c.position.x>700)c.position.x=-700;});
+  cloudMatSky.color.setRGB(.28+.72*day,.3+.7*day,.42+.58*day);
+  // 太陽路徑
+  const key=Math.floor(f.T)+'_'+S.tilt.toFixed(2);if(key!==pathKey){pathKey=key;rebuildPath(f.T);}
+  pathLine.visible=hourPts.visible=S.path;
+  // 地面色（用光照）
+  sky.fog.near=250+200*day;
+}
+function seasonText(f){
+  if(S.tilt<0.5)return '🧲 地軸沒有傾斜：太陽永遠直射赤道，白天黑夜一年四季都一樣長，所以「沒有四季」！';
+  const ev=EVENTS.map((e,i)=>({i,d:Math.abs((((f.T-e+YEAR/2)%YEAR)+YEAR)%YEAR-YEAR/2)})).sort((a,b)=>a.d-b.d)[0];
+  if(ev.d<1.3){return ['🌱 春分！太陽剛好直射赤道，全世界白天和黑夜都一樣長（各12小時）。','☀️ 夏至！太陽直射北回歸線，北半球白天最長、黑夜最短。台灣就在回歸線附近，太陽幾乎在頭頂！','🍂 秋分！太陽又直射赤道，白天和黑夜再次一樣長。','❄️ 冬至！太陽直射南回歸線，北半球白天最短、黑夜最長，這天要吃湯圓喔！'][ev.i];}
+  return ['🌱 春天：太陽直射點正從赤道慢慢往北移，白天越來越長，天氣變暖。','☀️ 夏天：北半球這一頭「偏向」太陽，陽光又直又久，所以又長又熱！','🍂 秋天：直射點從北邊回到赤道，白天越來越短，天氣轉涼。','❄️ 冬天：北半球「偏離」太陽，陽光斜斜的、白天短，所以冷。這時南半球正是夏天！'][seasonOfT(f.T)];
+}
+const rowsEl=$('rows');let rowKey='';
+function updateInfo(f){
+  $('clock').textContent=dateStr(f.T,true)+' '+fmtHM(f.hour);
+  const dl=dayLength(f.decl),sr=12-dl/2,ss=12+dl/2;
+  const dec=Math.abs(f.decl)<0.05?'赤道 0°':(f.decl>0?'北緯 ':'南緯 ')+Math.abs(f.decl).toFixed(1)+'°';
+  const alt=f.sunAlt, phase=alt>6?'☀️ 白天':alt>-6?(f.hour<12?'🌅 清晨':'🌇 黃昏'):'🌙 夜晚';
+  const rows=[['台灣現在',phase],['太陽直射點',dec],['北半球季節',SEASON[seasonOfT(f.T)]+'天'],['台灣白天長度',Math.floor(dl)+' 小時 '+Math.round((dl%1)*60)+' 分'],['台灣日出／日落',fmtHM(sr)+' ／ '+fmtHM(ss)],['太陽高度角',Math.max(-90,alt).toFixed(0)+'°'],['月相',moonName(f.psi)+'　亮 '+Math.round(f.illum*100)+'%']];
+  const k=rows.map(r=>r.join('|')).join('#');
+  if(k!==rowKey){rowKey=k;rowsEl.innerHTML=rows.map(r=>`<div class="row"><span>${r[0]}</span><b>${r[1]}</b></div>`).join('');}
+  if(!S.lesson)$('tip').textContent=seasonText(f);
+}
+
+/* ===================== 介面 ===================== */
+function setView(v){
+  S.view=v;$('tabSpace').classList.toggle('on',v==='space');$('tabSky').classList.toggle('on',v==='sky');
+  ['rowGhost','rowOrbit'].forEach(i=>$(i).style.display=v==='space'?'flex':'none');
+  ['rowCon','rowPath'].forEach(i=>$(i).style.display=v==='sky'?'flex':'none');
+  $('insetLbl').textContent=v==='space'?'🇹🇼 台灣看天空（點我放大）':'🌌 太陽系（點我放大）';
+  buildViewBtns();
+}
+function buildViewBtns(){
+  const b=$('viewbtns');b.innerHTML='';
+  const add=(t,fn,on)=>{const e=document.createElement('button');e.textContent=t;if(on)e.className='on';e.onclick=fn;b.appendChild(e);};
+  if(S.view==='space'){add('🔭 看整個太陽系',()=>{focusMode('system')},S.focus==='system');add('🌍 靠近地球',()=>{focusMode('earth')},S.focus==='earth');}
+  else{[['北',0],['東',90],['南',180],['西',270]].forEach(([t,d])=>add('看'+t,()=>lookYaw(d*D2R,15*D2R)));
+    add('☀️ 找太陽',()=>lookAtBody('sun'));add('🌙 找月亮',()=>lookAtBody('moon'));add('⭐ 北極星',()=>lookAtBody('polaris'));}
+}
+$('tabSpace').onclick=()=>setView('space');$('tabSky').onclick=()=>setView('sky');
+$('inset').onclick=()=>setView(S.view==='space'?'sky':'space');
+let focusAnim=null;
+function focusMode(m){
+  S.focus=m;const f=cur;
+  const off=m==='earth'?new THREE.Vector3(-f.S.z,0,f.S.x).multiplyScalar(20).add(new THREE.Vector3(0,7,0)):new THREE.Vector3(0,90,120);
+  const tgt=m==='earth'?f.earth.clone():new THREE.Vector3();
+  focusAnim={t:0,fromP:camSpace.position.clone(),fromT:controls.target.clone(),toOff:off,toT:tgt};buildViewBtns();
+}
+function lookYaw(y,p){view.tyaw=y;view.tpitch=p;}
+function lookAtBody(k){const f=cur;let v;
+  if(k==='sun')v=toSky(f.S,f);else if(k==='moon')v=toSky(f.moon,f);else v=polaris.clone().normalize().applyMatrix4(starGroup.matrix.clone().setPosition(0,0,0));
+  view.tyaw=Math.atan2(v.x,-v.z);view.tpitch=Math.asin(THREE.MathUtils.clamp(v.y,-1,1));}
+function jumpEvent(i){S.T=Math.floor(jumpNear(i))+(S.T%1+1)%1;S.lesson=null;}
+const SPEEDS=[['⏸',0],['🐢 10分/秒',10/1440],['🚶 1小時/秒',1/24],['🏃 6小時/秒',.25],['🚀 1天/秒',1],['⚡ 10天/秒',10],['🌀 1個月/秒',30]];
+SPEEDS.forEach(([t,v])=>{const b=document.createElement('button');b.textContent=t;b.dataset.v=v;b.onclick=()=>{S.speed=v;S.playing=v>0;markSpeed();};$('speeds').appendChild(b);});
+function markSpeed(){[...$('speeds').children].forEach(b=>b.classList.toggle('on',S.playing&&Math.abs(+b.dataset.v-S.speed)<1e-9||(!S.playing&&+b.dataset.v===0)));$('play').textContent=S.playing?'⏸ 暫停':'▶ 播放';}
+$('play').onclick=()=>{if(!S.playing&&S.speed===0)S.speed=1/24;S.playing=!S.playing;markSpeed();};
+function setDateTime(doy,hour){const d0=((Math.floor(S.T)%365)+365)%365;S.T=Math.floor(S.T)-d0+doy+hour/24;}
+let drag={date:false,hour:false};
+['date','hour'].forEach(id=>{const e=$(id);e.addEventListener('pointerdown',()=>drag[id]=true);addEventListener('pointerup',()=>drag[id]=false);
+  e.addEventListener('input',()=>{S.lesson=null;setDateTime(+$('date').value,+$('hour').value);});});
+[['🌱 春分',0],['☀️ 夏至',1],['🍂 秋分',2],['❄️ 冬至',3]].forEach(([t,i])=>{const b=document.createElement('button');b.textContent=t;b.onclick=()=>jumpEvent(i);$('jumps').appendChild(b);});
+{const b=document.createElement('button');b.textContent='⏱ 現在';b.onclick=()=>{S.T=(Date.now()-Date.UTC(2026,0,1))/864e5+8/24;S.lesson=null;};$('jumps').appendChild(b);}
+[['🌑 新月',0],['🌓 上弦',90],['🌕 滿月',180],['🌗 下弦',270]].forEach(([t,deg])=>{const b=document.createElement('button');b.textContent=t;
+  b.onclick=()=>{const p=cur.psi/D2R;const dd=((deg-p)%360+360)%360;S.T+=dd/360*SYN;S.lesson=null;};$('moons').appendChild(b);});
+$('tilt').oninput=e=>{setTilt(+e.target.value);$('tiltVal').textContent=S.tilt.toFixed(1)+'°';};
+$('tilt0').onclick=()=>{$('tilt').value=0;setTilt(0);$('tiltVal').textContent='0.0°';S.lesson=null;};
+$('tilt23').onclick=()=>{$('tilt').value=23.44;setTilt(23.44);$('tiltVal').textContent='23.4°';};
+[['cbLines','lines'],['cbNames','names'],['cbGhost','ghost'],['cbMoonOrbit','moonOrbit'],['cbCon','con'],['cbPath','path'],['cbCloud','cloud']].forEach(([id,k])=>$(id).onchange=e=>S[k]=e.target.checked);
+$('labHead').onclick=()=>{const l=$('lab');l.classList.toggle('hide');$('labArrow').textContent=l.classList.contains('hide')?'▸':'▾';};
+if(innerWidth<860){$('lab').classList.add('hide');$('labArrow').textContent='▸';}
+
+const LESSONS=[
+ ['🔄 自轉→日夜',()=>{setView('space');focusMode('earth');S.speed=1/24*.6;S.playing=true;S.ghost=false;$('cbGhost').checked=false;markSpeed();return '地球像陀螺一樣，每 24 小時「自轉」一圈（由西向東）。面向太陽的地方是白天，背對太陽的地方是晚上。看看紅色圖釘 📍 台灣，是不是一下白天、一下黑夜？（黃色小點是太陽正照射的地方）';}],
+ ['🌍 公轉→一年',()=>{setView('space');focusMode('system');S.speed=8;S.playing=true;markSpeed();return '地球一邊自轉，一邊繞著太陽「公轉」，繞一圈約 365 天，就是一年。地球公轉的軌道是一個接近圓形的大圈圈。';}],
+ ['🧲 傾斜→四季',()=>{setView('space');focusMode('system');S.ghost=true;$('cbGhost').checked=true;$('tilt').value=23.44;setTilt(23.44);S.speed=4;S.playing=true;markSpeed();return '地球的地軸傾斜 23.4°，而且無論公轉到哪裡，都指向同一個方向（北極星）。所以夏天時北半球偏向太陽、冬天偏離太陽，就產生了四季！到「實驗室」把傾斜調成 0°，看看四季會不會消失。';}],
+ ['🌡️ 回歸線',()=>{setView('space');S.lines=true;$('cbLines').checked=true;jumpEvent(1);focusMode('earth');S.speed=1/24*.5;S.playing=true;markSpeed();return '夏至那天，太陽直射「北回歸線」（北緯 23.4°），台灣剛好就在附近，中午太陽幾乎在頭頂上！冬至則直射南回歸線。赤道是 0°，太陽在春分、秋分直射赤道。';}],
+ ['🌙 月亮月相',()=>{setView('space');focusMode('earth');S.speed=1;S.playing=true;markSpeed();return '月亮繞著地球轉一圈約 29.5 天。月亮自己不會發光，是反射太陽光。我們從地球看月亮被照亮的部分，會隨著位置變化，就是「月相」：新月→上弦→滿月→下弦。';}],
+ ['🌅 台灣的一天',()=>{setView('sky');S.speed=1/24*.7;S.playing=true;setDateTimeNow(6);markSpeed();lookYaw(90*D2R,10*D2R);return '站在台灣看天空：太陽從東邊升起，中午最高，從西邊落下。夜晚會看到月亮和星星。星星看起來繞著「北極星」轉，因為地球在自轉喔！拖曳畫面可以轉頭看。';}],
+ ['⭐ 星星繞北極星',()=>{setView('sky');setDateTimeNow(21);S.speed=1/24*1.5;S.playing=true;markSpeed();lookAtBody('polaris');return '北極星幾乎正對著地軸，所以整晚都在北方同一個位置。其他星星看起來繞著它轉一圈，這是地球自轉造成的。北斗七星和仙后座都會繞著它轉！';}],
+];
+function jumpNear(i){return Math.round((S.T-EVENTS[i])/YEAR)*YEAR+EVENTS[i];}
+function setDateTimeNow(h){S.T=Math.floor(S.T)+h/24;}
+LESSONS.forEach(([t,fn])=>{const b=document.createElement('button');b.textContent=t;b.onclick=()=>{S.lesson=t;$('tip').textContent=fn();};$('lessons').appendChild(b);});
+$('tip').textContent='';
+const modalHtml=`<h3 style="margin-top:0">🌍 怎麼玩？</h3><ul style="padding-left:20px;margin:0"><li>用手指／滑鼠<b>拖曳</b>轉動畫面，<b>滾輪／雙指</b>縮放。</li><li>下方拉桿可以改<b>日期</b>與<b>時間</b>，也能選速度讓時間流動。</li><li>右上角「🌌 太陽系」與「🇹🇼 台灣看天空」可以切換視角，右下小視窗<b>同步顯示</b>另一個視角，點它可以互換。</li><li>「🔬 實驗室」可以把<b>地軸傾斜</b>改成 0° 或更大，看看四季怎麼變！</li><li>點左邊「🎓 小教室」有現成的示範。</li></ul>`;
+$('modalBody').innerHTML=modalHtml;$('modal').style.display='flex';$('modalClose').onclick=()=>$('modal').style.display='none';
+
+/* ---- 天空視角的拖曳 ---- */
+let pid=null,lx=0,ly=0;
+canvas.addEventListener('pointerdown',e=>{if(S.view!=='sky')return;pid=e.pointerId;lx=e.clientX;ly=e.clientY;canvas.setPointerCapture(pid);view.tyaw=null;});
+canvas.addEventListener('pointermove',e=>{if(S.view!=='sky'||e.pointerId!==pid)return;const k=view.fov/70*.0045;view.yaw-=(e.clientX-lx)*k;view.pitch=THREE.MathUtils.clamp(view.pitch+(e.clientY-ly)*k,-.6,1.5);lx=e.clientX;ly=e.clientY;});
+canvas.addEventListener('pointerup',e=>{if(e.pointerId===pid)pid=null;});
+canvas.addEventListener('wheel',e=>{if(S.view!=='sky')return;e.preventDefault();view.fov=THREE.MathUtils.clamp(view.fov*(1+Math.sign(e.deltaY)*.08),25,100);},{passive:false});
+const angDiff=(a,b)=>{let d=(a-b)%TAU;if(d>Math.PI)d-=TAU;if(d<-Math.PI)d+=TAU;return d;};
+
+/* ===================== 主迴圈 ===================== */
+let cur=frame(S.T),last=performance.now(),W=0,H=0;
+function resize(){W=innerWidth;H=innerHeight;renderer.setSize(W,H,false);
+  document.documentElement.style.setProperty('--dockh',$('dock').offsetHeight+'px');}
+addEventListener('resize',resize);resize();
+setView('space');markSpeed();focusMode('system');
+{const f=cur;camSpace.position.set(0,90,120);controls.target.set(0,0,0);focusAnim=null;}
+
+let prevEarth=cur.earth.clone();
+function draw(main,rect,isInset){
+  const [x,y,w,h]=rect;
+  renderer.setViewport(x,H-y-h,w,h);renderer.setScissor(x,H-y-h,w,h);renderer.setScissorTest(isInset);
+  if(main==='space'){const c=isInset?camInset:camSpace;c.aspect=w/h;c.updateProjectionMatrix();renderer.render(space,c);}
+  else{camSky.aspect=w/h;camSky.fov=isInset?Math.max(view.fov,70):view.fov;camSky.updateProjectionMatrix();renderer.render(sky,camSky);}
+}
+function loop(now){
+  requestAnimationFrame(loop);
+  const dt=Math.min(.1,(now-last)/1000);last=now;
+  if(S.playing&&S.speed>0)S.T+=S.speed*dt;
+  const f=cur=frame(S.T);
+  updateWorld(f,dt);
+  // 空間相機：跟隨地球／轉場
+  const dE=f.earth.clone().sub(prevEarth);prevEarth.copy(f.earth);
+  if(S.focus==='earth'&&!focusAnim){camSpace.position.add(dE);controls.target.add(dE);}
+  if(focusAnim){focusAnim.t=Math.min(1,focusAnim.t+dt/1.4);const k=focusAnim.t*focusAnim.t*(3-2*focusAnim.t);
+    const tgt=S.focus==='earth'?f.earth:focusAnim.toT;const toP=tgt.clone().add(focusAnim.toOff);
+    camSpace.position.lerpVectors(focusAnim.fromP,toP,k);controls.target.lerpVectors(focusAnim.fromT,tgt,k);if(focusAnim.t>=1)focusAnim=null;}
+  controls.update();
+  // 天空相機
+  if(view.tyaw!==null){const dy=angDiff(view.tyaw,view.yaw),dp=view.tpitch-view.pitch;view.yaw+=dy*Math.min(1,dt*6);view.pitch+=dp*Math.min(1,dt*6);if(Math.abs(dy)<.002&&Math.abs(dp)<.002)view.tyaw=null;}
+  camSky.rotation.set(view.pitch,-view.yaw,0);
+  // 小視窗相機（太陽系）：固定看著地球
+  {const off=new THREE.Vector3(-f.S.z,0,f.S.x).multiplyScalar(16).add(new THREE.Vector3(0,5,0));camInset.position.copy(f.earth).add(off);camInset.lookAt(f.earth);}
+  // 渲染
+  renderer.setScissorTest(false);renderer.setViewport(0,0,W,H);renderer.clear();
+  const r=$('inset').getBoundingClientRect();
+  draw(S.view,[0,0,W,H],false);
+  draw(S.view==='space'?'sky':'space',[r.left,r.top,r.width,r.height],true);
+  renderer.setScissorTest(false);
+  updateLabels(S.view==='space'?camSpace:camSky,W,H,f);
+  // UI
+  updateInfo(f);
+  if(!drag.date){$('date').value=((Math.floor(S.T)%365)+365)%365;}
+  if(!drag.hour){$('hour').value=f.hour;}
+  $('dateVal').textContent=dateStr(f.T,false);$('hourVal').textContent=fmtHM(f.hour);
+  if(S.view==='sky'){const b=Math.round(((view.yaw/D2R%360)+360)%360)%360,dirs=['北','東北','東','東南','南','西南','西','西北'];
+    $('hud').textContent=`面向 ${dirs[Math.round(b/45)%8]} ${b}°　仰角 ${(view.pitch/D2R).toFixed(0)}°　（拖曳轉頭／滾輪縮放）`;$('hud').style.display='';}
+  else $('hud').style.display='none';
+}
+requestAnimationFrame(loop);
+window.__S=S;window.__dbg={frame:()=>cur,setView,focusMode};
+</script>
+</body>
+</html>
